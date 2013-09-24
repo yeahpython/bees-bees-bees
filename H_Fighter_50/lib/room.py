@@ -17,8 +17,8 @@ import messages
 import math
 import bullet
 # Tile count in a room
-rows = graphics.world_h / bh
-cols = graphics.world_w / bw
+#rows = None #graphics.world_h / bh
+#cols = None #graphics.world_w / bw
 
 USE_IMAGES = 0
 
@@ -26,10 +26,12 @@ USE_IMAGES = 0
 def tuplefrommatrix(mat):
 	return (mat[0,0], mat[0,1])
 
-
 def load(file_in):
 	file_descriptor = open(file_in)
 	lines = file_descriptor.readlines()
+	global rows, cols
+	rows = len(lines)-1
+	cols = len(lines[-1])
 	file_descriptor.close()
 	tiles = []
 	for c in range(cols):
@@ -514,7 +516,7 @@ class Room(object):
 							self.start_position[0,1] = y*bh + 16
 							continue
 						g = len(self.side_directory[x][y])
-						pygame.draw.polygon(surface, [0,0,0], pointlist)
+						pygame.draw.polygon(surface, graphics.foreground, pointlist)
 						#pygame.draw.polygon(surface, [ 255 - min(random.random()*150 + self.density[x][y] * 20, 255) for k in graphics.foreground], pointlist)
 
 		
@@ -532,7 +534,7 @@ class Room(object):
 			#print "\n\n\n\n\n\n", array(side.side[0])[0], "\n\n\n"#, array(side.side[0])[0]
 			#try:
 				#start, end, text, textpos = self.sidelabels[i]
-			pygame.draw.line(surface, [0,0,100], start, end, 3) # Draw the offsetted lines
+			pygame.draw.line(surface, graphics.outline, start, end, 3) # Draw the offsetted lines
 			#pygame.draw.circle(surface, [0,0,255], [int(k) for k in start], 2)
 			#pygame.draw.circle(surface, [0,0,255], [int(k) for k in end], 2)
 			#surface.blit(text, textpos)

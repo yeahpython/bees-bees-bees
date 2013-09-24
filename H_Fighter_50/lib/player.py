@@ -18,7 +18,7 @@ killmoderadius = 10
 
 
 
-gravity = matrix([[0, 0.0001]]) # was 0.0006
+gravity = matrix([[0, 0.0006]]) # was 0.0006
 jumpspeed = 0.4
 jumpvel = matrix([[0, -jumpspeed]])
 maxvel = 0.5
@@ -148,7 +148,14 @@ class Player(physical.Physical):
 		test.add_sticky('player')
 
 		super(Player, self).draw(surface)
-		color = self.color
+		color = [0,0,0]
+		print self.losinghealth
+		if self.losinghealth:
+			color = [255,0,0]
+		else:
+			color = self.color
+		self.losinghealth = 0
+
 		#if self.counter >= self.radius - 10:
 		#	if self.radius < 20:
 		#		color = [255, 200, 0]
@@ -161,13 +168,28 @@ class Player(physical.Physical):
 			for y in range(-1, 2, 1):
 				px = ixy[0,0] + x*graphics.world_w
 				py = ixy[0,1] + y*graphics.world_h
-				pygame.draw.circle(surface, [0,0,0], (px, py), int(self.radius), 1)
+				#pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
 				if 1:#self.grounded:
 					w = 0
 				else:
 					w = 2
-				pygame.draw.circle(surface, self.color, (px, py), int(self.radius*0.4), w)
+				pi = 3.1415926
+				pygame.draw.circle(surface, color, (px, py-int(self.radius*0.7)), int(self.radius*0.3), w)
 
+				#body
+				pygame.draw.line(surface, color, (px,py-int(self.radius*0.6)), (px, py+int(self.radius*0.2)), 1)
+
+				#right leg
+				pygame.draw.line(surface, color, (px,py+int(self.radius*0.2)), (px + self.radius*math.cos(0.4*pi), py+self.radius*math.sin(0.4*pi)), 1)
+				
+				#left leg
+				pygame.draw.line(surface, color, (px,py+int(self.radius*0.2)), (px + self.radius*math.cos(0.6*pi), py+self.radius*math.sin(0.6*pi)), 1)
+				
+				#right arm
+				pygame.draw.line(surface, color, (px,py-int(self.radius*0.2)), (px + self.radius*math.cos(0.1*pi), py+self.radius*math.sin(0.1*pi)), 1)
+				
+				#left arm
+				pygame.draw.line(surface, color, (px,py-int(self.radius*0.2)), (px + self.radius*math.cos(0.9*pi), py+self.radius*math.sin(0.9*pi)), 1)
 				#pygame.draw.circle(surface, [0,0,0], (px, py), int(self.radius), 0)
 				#pygame.draw.circle(surface, [55,255,155], (px, py), int(self.radius*0.5), 0)
 

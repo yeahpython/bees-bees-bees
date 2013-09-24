@@ -4,7 +4,7 @@ import graphics
 
 font = pygame.font.Font(None, 20)
 
-info_c = [50,50,50]
+info_c = [255,25,255]
 
 class TopBar(object):
 	'''This class involves a couple of pieces of information

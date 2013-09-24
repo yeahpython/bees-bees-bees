@@ -13,7 +13,7 @@ lines = []
 tiles = []
 backgroundmarkers = []
 #^^^^^^^^^^^^^^^^^^
-show = [0,     0,           0,          0,       0,      1,                     0]
+show = [1,     0,           0,          0,       0,      1,                     0]
 #     sides   vectors   indicators     lines   tiles   backgroundmarkers       text
 
 

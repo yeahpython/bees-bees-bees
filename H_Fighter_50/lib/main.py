@@ -27,6 +27,7 @@ import time
 
 
 game_title = "evade"
+level = "flat room.txt"
 
 def initialization():
 	pygame.init()
@@ -38,6 +39,7 @@ def main_loop():
 	#display variables
 	screen = pygame.display.get_surface()
 	messages.screen = screen
+	graphics.load(os.path.join("data", "rooms", level))
 	world = pygame.Surface((graphics.world_w, graphics.world_h))
 	messages.say("evade", 0)
 
@@ -46,8 +48,7 @@ def main_loop():
 
 
 	t = topbar.TopBar(screen)
-
-	r = room.load(os.path.join("data", "rooms", "sidescrolling.txt")) 
+	r = room.load(os.path.join("data", "rooms", level)) 
 	test.mark(r.background)
 	r.topbar = t
 

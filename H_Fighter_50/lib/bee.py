@@ -20,14 +20,17 @@ num_best_bees = 10
 
 '''normal mode
 gravity = matrix([[0, 0.0006]])
-jumpspeed = 0.4
+jumpspeed = 0.04
 jumpvel = matrix([[0, -jumpspeed]])
-maxvel = 0.5
-maxvelx = 0.3
-groundacc = 0.02
-airacc = 0.02
-airresist = 0.0000001
-friction = 0.001
+maxvel = 0.3
+maxvelx = 1
+groundacc = 0.0000002
+yogroundacc = matrix([[groundacc, 0]])
+airacc = 0.0002
+airresist = 0.2
+friction = 0.1
+speed_decay = 0.999
+healthlossrate = 0.000001
 '''
 
 '''flying'''
@@ -42,7 +45,8 @@ airacc = 0.0001
 airresist = 0.000002
 friction = 0.0000001
 speed_decay = 0.998
-healthlossrate = 0.000001
+healthlossrate = 0.00001
+
 
 #afunc = lambda blah: 2/(1+math.e**-blah)-1
 #bfunc = lambda blah: 255/(1+math.e**-blah)
@@ -54,9 +58,8 @@ splits = "-"
 bw = graphics.bw
 bh = graphics.bh
 
-
 class Bee(physical.Physical):
-	def __init__(self, room, prebrain = None, color = [128,128,128], radius = 14, health = 1):
+	def __init__(self, room, prebrain = None, color = [128,128,128], radius = 5, health = 1):
 		super(Bee, self).__init__(room)
 		if prebrain != None:
 			self.brain = prebrain
@@ -241,6 +244,7 @@ class Bee(physical.Physical):
 			#self.player.randomize_color()
 			#self.player.radius -=10
 			
+			self.player.losinghealth=1
 			p = disp * (dist+0.1)**(-2) * 300
 			if p[0,0] > 0:
 				self.player.grounded = 1
@@ -340,9 +344,18 @@ class Bee(physical.Physical):
 				c = self.color
 				#if self.husk:
 				#	c = [255,0,255]
-				pygame.draw.circle(surface, c, (px, py), int(self.radius))
+				#pygame.draw.circle(surface, c, (px, py), int(self.radius))
+				r = int(self.radius * 0.6)
+				if self.vxy[0,0]>0:
+					pygame.draw.line(surface, c, (px-r,py-r), (px+r, py+r), 1)
+				else:
+					pygame.draw.line(surface, c, (px+r,py-r), (px-r, py+r), 1)
+
+
+
+
 				#pygame.draw.circle(surface, [int(p) for p in self.color], (px, py), int(self.radius))
-				centercolor = [0,0,0]
+				centercolor = [255-n for n in self.color]
 				rad = int(self.radius*(1-self.health))
 				rad = max( rad, 0)
 				if not self.husk:			
