@@ -452,9 +452,8 @@ class Room(object):
 					s = ((x+0.4)*bw, (y+0.6)*bh)
 					test.backgroundmarkers.extend([(p,q), (q,r), (r,s), (s,p)])
 
-		print "draw {0} crosses".format(wolo)
-
 	def update(self):
+		print "boom, boom, I'm a room."
 		self.timetosave -= 1
 		if self.timetosave < 0:
 			for b in self.bestbees:
@@ -542,20 +541,10 @@ class Room(object):
 			#	continue
 		
 
-	def draw2(self, surface):
-		#r = surface.get_rect()
-		#self.dirtyareas.append(r)
+	def repair(self, surface):
 		for a in self.dirtyareas:
 			surface.blit(self.background, a, a)
-			#pygame.draw.rect(surface, (0,0,0),a, 1)
 		self.dirtyareas = []
-		'''
-		for y in range(graphics.world_h / bh):
-			for x in range(graphics.world_w / bw):
-				print self.object_directory[x][y],
-			print ""
-		print "\n\n\n"
-		'''
 
 
 	def get_sides(self, xy, dxy, checknormals = 1, verbose = 0):

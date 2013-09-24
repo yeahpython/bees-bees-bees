@@ -13,7 +13,7 @@ class Brain(object):
 
 	def __init__(self, number_of_inputs, other_node_sizes, activation_functions = None):
 		if activation_functions == None:
-			activation_functions = [self.afunc, self.afunc]
+			activation_functions = [self.afunc, self.afunc, self.afunc, self.afunc]
 
 		#[6,5,5,...] with the 6 for the 
 		self._all_layer_sizes = [number_of_inputs + 1] + other_node_sizes

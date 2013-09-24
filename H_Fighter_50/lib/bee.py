@@ -64,7 +64,7 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(12, [30, 5])
+			self.brain = brain.Brain(12, [10, 10, 10, 2])
 		self.color = color
 		self.radius = radius
 		self.health = health
@@ -156,7 +156,7 @@ class Bee(physical.Physical):
 				self.up = outputs[0]
 				#down = outputs[1]
 				self.leftright = outputs[1]
-				if outputs[2] > 0 and self.timesincelastshot > 1000 and 1==0:
+				if 1==0 and outputs[2] > 0 and self.timesincelastshot > 1000:
 					self.timesincelastshot = 0
 					direction = matrix([outputs[3],outputs[4]])
 					direction = disp_to_p

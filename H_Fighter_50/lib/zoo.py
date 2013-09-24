@@ -31,12 +31,16 @@ class Beehive(object):
 		if title == None:
 			return
 		self.loaddata()
+		print "loaded", len(h.specimens), "specimens",
+		for k in h.specimens:
+			print k[0] + k[1] + ", ",
+		print ""
 
 	def save_bee(self, bee):
 		self.specimens.append((bee.name, bee.ancestry, bee.color, bee.brain._all_edges, bee.eyes))
 
-	def build_bees(self, room, player):
-		o = []
+	def preserved_bees(self, room, player):
+		newbees = []
 		for name, ancestry, color, edges, eyes in self.specimens:
 			b = bee.Bee(room)
 			b.findplayer(player)
@@ -45,8 +49,8 @@ class Beehive(object):
 			b.ancestry = ancestry
 			b.brain._all_edges = edges
 			b.eyes = eyes
-			o.append(b)
-		return o
+			newbees.append(b)
+		return newbees
 
 	def savedata(self):
 		self.specimens = self.specimens[-3:]

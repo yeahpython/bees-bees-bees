@@ -42,6 +42,8 @@ class Player(physical.Physical):
 		self.name = "Harold"
 		self.killmode = 0
 		self.kind = "player"
+		self.place(self.room.start_position)
+		self.room.player = self
 
 	def maybe_die(self):
 		# Player death. Draw some things at the top of the screen.
@@ -149,7 +151,6 @@ class Player(physical.Physical):
 
 		super(Player, self).draw(surface)
 		color = [0,0,0]
-		print self.losinghealth
 		if self.losinghealth:
 			color = [255,0,0]
 		else:

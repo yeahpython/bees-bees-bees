@@ -13,13 +13,13 @@ lines = []
 tiles = []
 backgroundmarkers = []
 #^^^^^^^^^^^^^^^^^^
-show = [1,     0,           0,          0,       0,      1,                     0]
+show = [1,     0,           0,          0,       0,      0,                     0]
 #     sides   vectors   indicators     lines   tiles   backgroundmarkers       text
 
 
 
-segs = []
-segdescriptors = []
+segs = [] #a list of times
+segdescriptors = [] # a list of descriptors or hashtags to say what's happening during the time
 stickylabels = []
 
 def begin_timing(segs, segdescriptors):

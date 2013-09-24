@@ -122,10 +122,10 @@ def no_parallels(duped):
 	'''cutting down vectors so that only one scalar multiple of each vector is present'''
 	deco_duped = []
 	for m in duped:
-		try:
+		if m[0,0]:
 			a = m[0,1] / m[0,0]
 			deco_duped.append((a,m))
-		except:
+		else:
 			a = float('infinity')
 			deco_duped.append((a,m))
 
