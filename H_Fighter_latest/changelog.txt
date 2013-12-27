@@ -1,0 +1,163 @@
+v3: 30 Jan
+-Started a change log
+-Started moving collision / side management functions out of the player class
+-Appearance edits?
+
+v4: 30 Jan
+-side management now under collision
+-Split up the "removing interior" and "merging adjacent" steps of combining sides, since it's more effective to do ALL the interior removal first.
+-Set up something to try to simplify all the edges at the start, but it has no physical impact at the moment.
+
+v5: 31 Jan
+Moved the "project" function out of the player class and dumped it in the collision file.
+
+v6: 31 Jan
+Removed the glitch where the side-simplification pattern wasn't working. Turns out it was because I was feeding it negative columns and weird stuff via the get_sides function.
+
+v7: 1 Feb
+Trying to deal with corners collision problem.
+player can only slide out of left corner here… wonder why?
+#   #
+ ###
+procrastinating from finding a genuine fix…
+Quick edit on normals saved with tiles to make them all of length 1.
+Going to precompute all the combined sides first.
+
+v8: 1 Feb
+Added the find_all_tiles, find_enough_tiles, and find_tiles_rect functions.
+
+v9: 2 Feb
+Restructured game so that sides are pre-merged.
+Big idea: pre-calculate whether or not each side grounds objects.
+
+v9B: 3 Feb
+After v10 went to hell:
+moving project back to player class.
+introducing test module.
+make sure each side knows its number
+
+v9C: 3 Feb
+Removed Diagnostics crap.
+
+v9D: 3 Feb
+removed num_deflections from grounded check since unnecessary.
+similarly removed screen check from side.is_hit_by
+first precalculate grounded
+removed the feeding mechanism entirely.
+
+v9E: 3 Feb
+so we do need the screen check in side.is_hit_by.
+generally made code prettier / more efficient.
+Move project into "Physical" superclass of Player.
+Everything is kind of efficient and pretty
+Time to combine normal and grounded as one variable: A list of normal vectors. Okay maybe not quite.
+
+v9F: 3 Feb
+Gonna make the grounded and normal stuff prettier.
+
+v11: 4 Feb
+removed the recursion from the project function.
+ignoring corners for now:
+Collision problems have something to do with int vs. float.
+Experimenting with modified projection methods.
+oh hell
+find the matrix such that after transformation the two segments are parallel to the axes, then segment intersection should be good and trivial. 
+
+v12: 5 Feb
+
+v14: 5 feb
+Making velocity modifications a part of is_hit_by
+side collision is solid with introduction of stickiness; some corner collision done.
+Made a Bee Class that currently duplicates the Player class.
+
+v15: 5 Feb
+Gave Bee a brain and fun inputs to process
+
+In future:
+Write collision code to deal with corners
+Optimize that side-combining function by grouping them by normal and position with respect to that normal.
+Make player-bee interaction more interesting.
+Make variables more easily accessible
+
+v27ish 10 Feb
+bees have brains and eyes. Made the activation function work and simplified outputs; Optimized side-combining function but still lacking
+Bees hit player.
+
+v28 10 Feb
+made the world wrap
+
+latest
+made food
+made stationary property
+made physics lazy
+-when stationary on a flat plane, stop doing physics
+-when outside screen - freeze all people
+made responsetime variable to cut down on drawing the opponents
+
+to do:
+make creatures saveable.
+make brains lazy
+-when outside screen - turn off computing
+bug fixes for collision testing accross tile map boundaries
+
+make rendering lazy (definitely not a major consideration.)
+-just make a start to it: Only draw to necessary portions of world and necessary parts of screen
+-make it easier to change tile sizes
+
+===================
+LONG PERIOD OF DGAF
+===================
+
+Now have neural network visualization 
+And interactive character sprite thing
+Also random map generation
+
+
+Todo / Nodes
+how to evaluate quality of plot
+similarity of two nodes in same player - > should be closer
+strong connection - > should be closer
+otherwise -> should be farther
+
+start with basic distance function though:
+f(x) = -0.00001*(x-50)**2 + 50
+
+make a hat that faces the tracker
+
+change node colors / sizes by value
+
+watch a node change live
+
+automatically remove torque?
+
+load bees
+-dummy in place
+
+change settings
+
+save settings
+
+live modification of existing map
+
+bee selection
+
+bee interaction:
+    peer-pressure forces / wind
+    repulsion forces
+
+better way of organizing computephysics
+
+cache the physics information about a map each time a new map is saved
+
+do something smarter than randomness during tile adjustment in random map generation
+
+change graphics to make stuff look less rigid
+
+make Q as a quit button ubiquitous
+
+make a cleaner interface for generally displaying images
+
+only draw bees if they’re in the display
+
+make a utils file for stuff like
+-finding all the extra locations a shape needs to be drawn
