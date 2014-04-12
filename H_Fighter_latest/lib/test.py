@@ -57,6 +57,8 @@ def remove_sticky(*args):
 		stickylabels.remove(label)
 
 def record(*args):
+	'''this will register the time between the last call to record and this overlap_line
+	as being spent on args'''
 	segs.append(time.time())
 	segdescriptors.append(args)
 	segdescriptors[-1] = segdescriptors[-1] + tuple(stickylabels)

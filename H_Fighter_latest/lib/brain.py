@@ -7,12 +7,13 @@ from pygame.locals import *
 import graphics
 import messages
 from numpy import linalg
+from game_settings import *
 
 font = pygame.font.Font(None, 20)
 
 basicallynotmoving = 0.015
 
-force = 0.0
+force = 0.5
 specialforcerules = {
 						"wall above right" : matrix([force, -force, -force]),
 						"wall below right" : matrix([force, force, -force]),
@@ -44,7 +45,14 @@ specialdrawinglines = {
 						}
 
 
-include_cycles = False	
+include_cycles = True	
+
+def afunc(x):
+	#return x > 0
+	return 1/(1+math.e**(-0.5*x))
+
+def welp(x):
+	return 2/(1+math.e**-x) - 1
 
 class Brain(object):
 	"A neural network! You can make it, randomize it, or make it process stuff!"
@@ -53,7 +61,7 @@ class Brain(object):
 	def __init__(self, number_of_inputs, other_node_sizes, activation_functions = None):
 		self.nodetags = {}
 		if activation_functions == None:
-			activation_functions = [self.afunc, self.afunc, self.afunc, self.afunc, self.afunc, self.afunc]
+			activation_functions = [afunc, afunc, afunc, afunc, afunc, afunc]
 
 		#[6,5,5,...] with the 6 for the 
 		self._all_layer_sizes = [number_of_inputs + 1] + other_node_sizes
@@ -92,12 +100,6 @@ class Brain(object):
 	def tester(self):
 		"returns zero-valued nodes and a list of matrices representing edges"
 		return self.nodes, self._all_edges
-
-	def welp(self, x):
-		return 2/(1+math.e**-x) - 1
-
-	def afunc(self, x):
-		return 1/(1+math.e**-x)
 
 	def randomizenodes(self):
 		self.nodes = [ matrix([random.random()*1 - 0.5 for k in range(layer_size)]) for layer_size in self._all_layer_sizes]
@@ -145,14 +147,18 @@ class Brain(object):
 
 	def compute(self, inp):
 		"Take the input nodes and work out what happens at the output"
-		self.nodes[0] = matrix(inp + [1])
+		settings[BRAIN_BIAS]
+		self.nodes[0] = matrix(inp + [settings[BRAIN_BIAS]])
 		for i, edges in enumerate(self._all_edges):
 			if include_cycles:
-				g = append(self.nodes[i+1], self.nodes[i], axis = 1)
+				'''combine current and previous layer'''
+				g = append( settings[MEMORY_STRENGTH] * self.nodes[i+1], self.nodes[i], axis = 1)
 				self.nodes[i + 1] = g*edges
 			else:
 				g = self.nodes[i]
 				self.nodes[i + 1] = g*edges
+
+			'''apply activation function'''
 			for k in range(self.nodes[i+1].shape[1]):
 				self.nodes[i+1][0,k] = self.activation_functions[i](self.nodes[i+1][0,k])
 			#self.nodes[i + 1][:] = self.activation_functions[i](self.nodes[i+1][:])
@@ -191,6 +197,7 @@ class Brain(object):
 			s = layer.shape
 			for j1 in range(s[0]):
 				for j2 in range(s[1]):
+					#weight = 2*afunc(layer[j1, j2]) - 1
 					weight = layer[j1, j2]
 					if weight > 0:
 						maxconnection = max(weight, maxconnection)
@@ -223,19 +230,21 @@ class Brain(object):
 					else:
 						break
 					for j2 in range(s[1]):
+						'''iterating over all connected neurons first = (i, j1) second = (i+1, j2)'''
 						sec = array(locations[(i+1,j2)] / scalefactor - translation)[0] * 1
 
 
+						#v = 2*afunc(layer[j1, j2]) - 1
 						v = layer[j1, j2]
 						color = 0
 						if v > 0:
-							if v < 0.5 * maxconnection:
-								continue
 							intensity = v/maxconnection
+							#if intensity < 0.1:
+							#	continue
 							color = [0,intensity*255,0]
 						else:
-							if v > 0.5 * minconnection:
-								continue
+							#if v > 0.1 * minconnection:
+							#	continue
 							if shownegatives:
 								intensity = v/minconnection
 								color = [intensity*255, 0, 0]
@@ -244,17 +253,21 @@ class Brain(object):
 						#if j1 < self.nodes[i].shape[1]:
 						#	secondpoint = (secondpoint + firstpoint) / 2
 						
-						lightup = []
-						if time != -1:
-							t = time / 2
-							lightup = [t]
-							lightup = [-x % 5 for x in lightup]
+						pieces = 1
 
-						for index in range(5):
-							a = index * 1.0 / 5
+						'''lightup = []
+																								if time != -1:
+																									t = time / 2
+																									lightup = [t]
+																									lightup = [-x % pieces for x in lightup]'''
+
+							
+
+						for index in range(pieces):
+							a = index * 1.0 / pieces
 							b = 1 - a
 
-							a2 = (index + 1.0) / 5
+							a2 = (index + 1.0) / pieces
 							b2 = 1 - a2
 
 							firstpoint = a*fir + b*sec
@@ -288,13 +301,13 @@ class Brain(object):
 							two2D = self.get2DPoint(secondpoint, rotation)
 
 
-							if index in lightup:
+							if 0 and index in lightup:
 								m = max(color[0], color[1])
 								pygame.draw.line(sf, [m, m, 0], one2D, two2D, int(width))
 							else:
 								pygame.draw.line(sf, color, one2D, two2D, int(width))
 
-		#circles!
+		'''circles!'''
 		for i, layer in enumerate(self.nodes):
 			for j in range(layer.shape[1]):
 				#locations[(i,j)] += velocities[(i,j)]
@@ -494,8 +507,6 @@ class Brain(object):
 			key_presses = pygame.event.get(pygame.KEYDOWN)
 			key_states = pygame.key.get_pressed()
 
-			print key_states
-
 			if previous_key_states:
 				key_downs = [new and not old for new, old in zip(key_states, previous_key_states)]
 			else:
@@ -597,10 +608,10 @@ class Brain(object):
 			s = layer.shape
 			for r in range(s[0]):
 				for c in range(s[1]):
-					if 1: #random.random() >= 0.9:
-						layer[r,c] *= (random.random()*1) + 0.5
-						layer[r,c] += (random.random()*0.1 - 0.05)
-						if 1==1 and random.random() > 0.99:
+					if random.random() < settings[MUTATION_CHANCES]:
+						layer[r,c] *= (random.random()*2 - 1) * settings[SCALING_MUTATION]  + 1
+						layer[r,c] += (random.random()*2 - 1) * settings[ADDITIVE_MUTATION_RATE]
+						if random.random() < settings[INVERT_MUTATION_RATE]:
 							layer[r,c]*= -1
 					#if random.random() >= 0.9**self.mutationrate[1]:
 					#	layer[r,c] *= -1

@@ -13,7 +13,7 @@ def combine(c1,c2):
 
 class Convex(object):
 	'''should typically be used to describe tiles in the map'''
-	def __init__(self, pointlist, offset):
+	def __init__(self, pointlist, offset, extranormals = []):
 		'''
 		pointlist is a list of matrices in the shape of horizontal vectors.
 		offset is one vector.
@@ -30,6 +30,7 @@ class Convex(object):
 
 		#these vectors point outward and have length 1
 		normals = [(rotation * side.T).T for side in sides]
+		normals += extranormals
 		normals = [w / linalg.norm(w) for w in normals]
 
 		# not sure what this is for

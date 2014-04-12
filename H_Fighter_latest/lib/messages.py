@@ -7,18 +7,16 @@ smallfont = pygame.font.Font(None, 20)
 
 screen = None
 
-
-
 def colorBackground(surface = 0):
 	if surface:
 		surface.fill(graphics.foreground)
 		box = surface.get_rect()
-		pygame.draw.rect(surface, (255, 255, 255), box, 1)
+		pygame.draw.rect(surface, graphics.outline, box, 1)
 	else:
 		screen.fill(graphics.foreground)
 		pygame.display.flip()
 
-def say(message, time = 0, down = 0, surface = 0, color = [200, 200, 200], size = "big"):
+def say(message, time = 0, down = 0, surface = 0, color = graphics.outline, size = "big"):
 	text = 0
 	textpos = 0
 

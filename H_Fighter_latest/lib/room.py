@@ -18,30 +18,27 @@ import math
 import bullet
 from random import randrange
 import time
-import settings
+import palette
+from game_settings import *
 # Tile count in a room
 #rows = None #graphics.world_h / bh
 #cols = None #graphics.world_w / bw
 
 USE_IMAGES = 0
 DRAW_RANDOM_CIRCLES = 0
-VISUALIZE_MAP_LOAD = 1
-GENERATE_RANDOM_MAP = 0
+VISUALIZE_MAP_LOAD = 0
 TIME_INITIALIZATION = 0
-
-#Determines density of walls in randomly generated maze
-oddsofhash = 0.2
 
 #increase this to make a very distint and impermeable floor / wall
 forcewall = 0
-forcefloor = 1
-noceiling = 1
-juiciness = 0
-horizontalbias = 1
+forcefloor = 0
+noceiling = 0
+
+horizontalbias = 0
 
 mapcolors = {
-"#": [255,255,255],
-" ": [0,0,0],
+"#": graphics.foreground,
+" ": graphics.background,
 "Q": [255,0,255],
 "E": [0,255,255],
 "Z": [255,255,0],
@@ -143,12 +140,6 @@ def congeal(lines, thoroughness):
 		n+= 1
 		substitute(lines, i, j, "#")
 
-def movecharacters(lines, low, high, runs, r):
-	for x in range(runs):
-		for i in range(rows):
-			for j in range(cols):
-				movecharacter(lines, low, high, r, randrange(rows), randrange(cols))
-
 def generateringmap(r, c, inrad, outrad):
 	out = []
 	for i in range(-r/2, r/2):
@@ -166,6 +157,61 @@ def generateringmap(r, c, inrad, outrad):
 		print line
 	return out
 
+def drawpoint(i, j, lines, override = 0):
+	if not VISUALIZE_MAP_LOAD:
+		return
+	m_dy = 250.0 / rows
+	m_dx = m_dy
+
+	predictedwidth = m_dx * cols
+	predictedheight = m_dy * rows
+
+	m_offset_x = graphics.disp_w/2 - predictedwidth / 2
+	m_offset_y = 20
+
+
+	left = m_offset_x + j * m_dx
+	top = m_offset_y + i * m_dy
+	right = m_offset_x + (j+1) * m_dx
+	bottom = m_offset_y + (i+1) * m_dy
+	left, top, right, bottom = int(left), int(top), int(right), int(bottom)
+
+	box = pygame.Rect(left, top, right-left, bottom-top)
+
+	character = lines[i][j]
+	if override:
+		character = override
+	color = mapcolors[character]
+
+	if character == "#":
+		pygame.draw.rect(pygame.display.get_surface(), [255, 255, 255], box)
+	else:
+		pygame.draw.rect(pygame.display.get_surface(), graphics.background, box)
+		c = character
+		centerx = m_offset_x + (j+0.5) * m_dx
+		centery = m_offset_y + (i+0.5) * m_dy
+		centerx = int(centerx)
+		centery = int(centery)
+		if c != " ":
+			pointlist = []
+			if c == "Q":
+				pointlist.append((left, top))
+				pointlist.append((right, top))
+				pointlist.append((left, bottom))
+			elif c == "E":
+				pointlist.append((left, top))
+				pointlist.append((right, top))
+				pointlist.append((right, bottom))
+			elif c == "Z":
+				pointlist.append((left, top))
+				pointlist.append((right, bottom))
+				pointlist.append((left, bottom))
+			elif c == "C":
+				pointlist.append((left, bottom))
+				pointlist.append((right, top))
+				pointlist.append((right, bottom))
+
+			pygame.draw.polygon(pygame.display.get_surface(), [255, 255, 255], pointlist)	
 
 def movecharacter(lines, low, high, rad, i, j):
 	nonspacecount = 0
@@ -197,17 +243,24 @@ def movecharacter(lines, low, high, rad, i, j):
 						nonspacecount -= int(random.random()*2*horizontalbias)
 	#case for wall
 
-
 	if (nonspacecount < low and lines[i][j] != ' ') or (nonspacecount > high and lines[i][j] == ' '):
-
 		mrad = 5
 
-		i2 = i+randrange(2*mrad + 1) - mrad
-		j2 = j+randrange(2*mrad + 1) - mrad
-		
+		movement_directions = [(x, y) for x in range(-1, 2) for y in range(1, 2) if x or y]
+		movement_directions = [(-1,1), (0,1), (1, 1)]
+		di, dj = random.choice(movement_directions)
 
-		i2 %= rows
-		j2 %= cols
+		i2, j2 = i+0, j+0
+
+		for x in range(100):
+			if lines[(i2 + di)%rows][(j2 + dj) % cols] != " ":
+				break
+			i2 += di
+			j2 += dj
+			#i2 = i+randrange(2*mrad + 1) - mrad
+			#j2 = j+randrange(2*mrad + 1) - mrad
+			i2 %= rows
+			j2 %= cols
 
 		char = lines[i2][j2]
 		substitute(lines, i2, j2, lines[i][j])
@@ -215,53 +268,13 @@ def movecharacter(lines, low, high, rad, i, j):
 		drawpoint(i2,j2,lines)
 		drawpoint(i,j,lines)
 
-def drawpoint(i, j, lines, override = 0):
-	if not VISUALIZE_MAP_LOAD:
-		return
-	m_dy = 250.0 / rows
-	m_dx = m_dy
-
-	predictedwidth = m_dx * cols
-	predictedheight = m_dy * rows
-
-	m_offset_x = graphics.disp_w/2 - predictedwidth / 2
-	m_offset_y = 20
-
-
-	left = m_offset_x + j * m_dx
-	top = m_offset_y + i * m_dy
-	right = m_offset_x + (j+1) * m_dx
-	bottom = m_offset_y + (i+1) * m_dy
-	left, top, right, bottom = int(left), int(top), int(right), int(bottom)
-
-	box = pygame.Rect(left, top, right-left, bottom-top)
-
-	character = lines[i][j]
-	if override:
-		character = override
-	color = mapcolors[character]
-
-	if character == "#":
-		pygame.draw.rect(pygame.display.get_surface(), color, box)
-	else:
-		pygame.draw.rect(pygame.display.get_surface(), [0,0,0], box)
-		c = character
-		centerx = m_offset_x + (j+0.5) * m_dx
-		centery = m_offset_y + (i+0.5) * m_dy
-		centerx = int(centerx)
-		centery = int(centery)
-		if c != " ":
-			if c == "Q":
-				box = pygame.Rect(left, top, centerx-left, centery-top)
-			elif c == "E":
-				box = pygame.Rect(centerx, top, right - centerx, centery-top)
-			elif c == "Z":
-				box = pygame.Rect(left, centery, centerx-left, bottom - centery)
-			elif c == "C":
-				box = pygame.Rect(centerx, centery, right-centerx, bottom - centery)
-
-			pygame.draw.rect(pygame.display.get_surface(), [255, 255, 255], box)
-	
+def movecharacters(lines, low, high, runs, r):
+	for x in range(runs):
+		for i in range(rows):
+			for j in range(cols):
+				movecharacter(lines, low, high, r, randrange(rows), randrange(cols))
+			if VISUALIZE_MAP_LOAD:
+				pygame.display.flip()
 
 def randomlymodify(lines):
 	#for i in range(rows):
@@ -272,22 +285,31 @@ def randomlymodify(lines):
 
 	for i in range(rows):
 		for j in range(cols):
-			if random.random() < oddsofhash:
+			if random.random() < settings[RANDOM_TILE_DENSITY]:
 				substitute(lines, i, j, '#')
 			else:
 				substitute(lines, i, j, ' ')
 			drawpoint(i,j,lines)
 
 
-	movecharacters(lines, 10, 13, 5, 3)
+	low = settings[RANDOM_MAP_LOW]
+	high = settings[RANDOM_MAP_HIGH]
+	runs = settings[RANDOM_MAP_RUNS]
+	r = settings[RANDOM_MAP_RADIUS]
+	movecharacters(lines, low, high, runs, r)
 
-	#movecharacters(lines, 2, 7, 2, 1)
+	#movecharacters(lines, 2, 7, 10, 1)
 
 
-	congeal(lines, thoroughness = 1)
+	congeal(lines, thoroughness = settings[CONGEAL_THOROUGHNESS])
 	roundedges(lines)
 	if VISUALIZE_MAP_LOAD:
 		pygame.display.flip()
+
+def globalize_dimensions(r, c):
+	global rows, cols
+	rows = r
+	cols = c
 
 def load(file_in):
 	messages.colorBackground()
@@ -296,7 +318,7 @@ def load(file_in):
 	global rows, cols
 	rows = len(lines)-1
 	cols = len(lines[-1])
-	if GENERATE_RANDOM_MAP:
+	if settings[GENERATE_RANDOM_MAP]:
 		messages.say('generating random terrain', down = 5)
 		randomlymodify(lines)
 		for line in lines:
@@ -342,6 +364,7 @@ class Room(object):
 	def __init__(self, tiles, lines):
 		#generateringmap(80, 60, 20, 30)
 		self.lines = lines
+		graphics.extract_dimensions(self.lines)
 		nextmessage = 6
 		self.cols, self.rows = cols, rows
 
@@ -352,11 +375,13 @@ class Room(object):
 		self.tiles = tiles # Whoops, this is more of a set of pointers than a set of distinct Tile objects
 		self.camera = 0
 		self.madness = 0
+		self.stasis = False
+		self.signal_new_tree = 0
 
 		nextmessage = messages.say("reducing sides", 0, down = nextmessage)
 		self.reduce_sides()
 
-		nextmessage = messages.say("optimising convexes", 0, down = nextmessage)
+		nextmessage = messages.say("collision stuff", 0, down = nextmessage)
 		self.optimize_convexes()
 
 		if (DRAW_RANDOM_CIRCLES):
@@ -366,43 +391,58 @@ class Room(object):
 
 		self.object_directory = [[[] for r in range(rows)] for c in range(cols)]
 		self.background = pygame.Surface((graphics.world_w, graphics.world_h))
+		self.collisionfield = pygame.Surface((graphics.world_w, graphics.world_h))
+		self.bgw = graphics.world_w
+		self.bgh = graphics.world_h
 		self.a = 0
 		self.start_position = matrix([100, 100])
 
 		
 
 		nextmessage = messages.say("drawing background", 0, down = nextmessage)
-		backgroundstarttime = time.time()
+		if TIME_INITIALIZATION: backgroundstarttime = time.time()
 		self.draw(self.background) # Note that this sets the start position to wherever the '!' is
 		self.background.convert()
-		print "drawing background took", time.time() - backgroundstarttime, "seconds"
+		self.draw(self.collisionfield, collision_only = 1)
+		self.collisionfield.convert()
+		self.pixels = pygame.PixelArray(self.collisionfield)
+		if TIME_INITIALIZATION: print "drawing background took", time.time() - backgroundstarttime, "seconds"
 
 		self.food = []
 		self.bees = []
+		self.deadbees = []
 		self.player = None
 		self.topbar = None
 		self.beehistory = 0
 		self.bestbees = []
 		self.timetosave = 100
 		self.h = None
-		self.beecap = 30
 		self.dirtyareas = []
 		self.visibles = []
 		self.bullets = []
+		self.painter = palette.Palette()
+		self.recentdeaths = 0
 		self.freespots = [ (r,c) for r in range(rows) for c in range(cols) if self.lines[r][c] == " "]
+
+		#for r,c in self.freespots:
+		#	pygame.draw.circle(self.background, [255, 255, 255], (int((c+0.5)*bw), int((r+0.5)*bh)), 10, 1)
 
 		nextmessage = messages.say("precomputing vision", 0, down = nextmessage)
 		self.precompute_vision()
 
-		nextmessage = messages.say('Press [enter] to start!', down = nextmessage)
-		waitforkey(pygame.K_RETURN)
+	def globalize_dimensions(self):
+		global rows, cols
+		rows = self.rows
+		cols = self.cols
 
 	def precompute_vision(self):
 
 		if TIME_INITIALIZATION: visionstarttime = time.time()
 		self.visiondirectory = [[[] for r in range(rows)] for c in range(cols)]
-		#eyes = [(1, 0), (1, 1), (0, 1), (-1, 0), (1,2), (1, -1), (-1, 1), (-1, -1), (0, -1)]
-		eyes = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+		eyes = [(1, 0), (1, 1), (0, 1), (-1, 0), (1, -1), (-1, 1), (-1, -1), (0, -1)]
+		#eyes = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+
+		sight_distance = graphics.screen_h / 2
 
 		directions = [] + eyes
 		for c in range(cols):
@@ -413,17 +453,26 @@ class Room(object):
 					n = (x**2 + y**2)**0.5
 					x0 = x / n
 					y0 = y / n
-					sights.append(bee.look2(self, xy[0,0], xy[0,1], x0, y0, 100, bw, bh))
+					sights.append(bee.look2(self, xy[0,0], xy[0,1], x0, y0, sight_distance, bw, bh))
 
 				infoz = []
 				for targ in sights:
 					if targ:
 						(x,y), name = targ
 						posx, posy = x*bw + 16, y*bh + 16
-						dist = ((posx - xy[0,0])**2 + (posy - xy[0,1])**2)**0.5
-						infoz.append(dist / 100)
+
+						'''finding the real shortest-path distance with wraparound'''
+						displacement = matrix([posx - xy[0,0], posy - xy[0,1]])
+						center = matrix([graphics.world_w/2, graphics.world_h/2])
+						displacement += center
+						displacement[0,0] %= graphics.world_w
+						displacement[0,1] %= graphics.world_h
+						displacement -= center
+
+						dist = linalg.norm(displacement)
+						infoz.append(dist / sight_distance)
 					else:
-						infoz.append(0)
+						infoz.append(1.0)
 				self.visiondirectory[c][r] = infoz
 
 		if TIME_INITIALIZATION: print "vision took", time.time() - visionstarttime, "seconds"
@@ -446,11 +495,14 @@ class Room(object):
 		if TIME_INITIALIZATION: print "density took", time.time() - densitystarttime, "seconds"
 
 	def optimize_convexes(self):
+		'''creates and improves convexes by showing which directions they'll push things.'''
+
 		if TIME_INITIALIZATION: convexstarttime = time.time()
 		self.convex_directory = [[ None for r in range(rows+4)] for c in range(cols+4)]
 
 		if TIME_INITIALIZATION: whoabro = time.time()
 
+		'''creating all the convexes. They're put in the convex_directory.'''
 		for c in range(-2, cols+2):
 			for r in range(-2, rows+2):
 				tps = self.tiles[c%cols][r%rows].pointlist
@@ -458,7 +510,33 @@ class Room(object):
 					continue
 				mps = [matrix([x,y]) for x,y in tps]
 				offset = matrix([bw*c, bh*r])
-				a = convex.Convex(mps, offset)
+
+
+				adjacents = []
+				for di in range(-1, 2):
+					#thisline = ""
+					r2 = (r + di) % rows
+					for dj in range(-1, 2):
+						c2 = (c + dj) % cols
+						#thisline += "["
+						#thisline += lines[r][c]
+						#thisline += "]"
+						if (di + dj) % 2 == 1:
+							adjacents.append(self.lines[r2][c2])
+					#print thisline
+
+				above = adjacents[0]
+				left = adjacents[1]
+				right = adjacents[2]
+				below = adjacents[3]
+
+				extranormals = []
+				if (above in "Z#" and right in "Z#") or (below in "E#" and left in "E#"):
+					extranormals.append(matrix([1,-1]))
+				if (above in "C#" and left in "C#") or (below in "Q#" and right in "Q#"):
+					extranormals.append(matrix([1,1]))
+
+				a = convex.Convex(mps, offset, extranormals)
 				a.name = self.tiles[c%cols][r%rows].name
 				self.convex_directory[c][r] = a
 
@@ -466,12 +544,13 @@ class Room(object):
 
 		if TIME_INITIALIZATION: print "loading convexes took", chrbro - whoabro, "seconds."
 
-		lol = []
+		'''make a list of all sides'''
+		all_sides = []
 		for s in self.sides:
-			lol.extend(s.side)
+			all_sides.extend(s.side)
 
-		coco = 0
-		for p in lol:
+		pointcounter = 0
+		for p in all_sides:
 			ex,ey = p[0,0],p[0,1]
 			l = math.ceil(ex/bw) - 1
 			r = math.floor(ex/bw)
@@ -482,6 +561,9 @@ class Room(object):
 			r = int(r)
 			t = int(t)
 			b = int(b)
+			'''l, r, t, b tell you the range of cells spanned by the side.
+			The ceiling and floor stuff is designed so that, say,
+			in the case that a point is in the middle, l = r'''
 
 			mx = int(ex/bw)
 			my = int(ey/bh)
@@ -489,6 +571,9 @@ class Room(object):
 			if l == r or t == b:
 				continue
 
+			'''we've filtered out the points in the middles of blocks'''
+
+			'''essentially we only activate points that are at endpoints of lines'''
 			for posx in range(l, r+1):
 				for posy in range(t, b+1):
 					c = self.convex_directory[posx][posy]
@@ -496,7 +581,7 @@ class Room(object):
 						for q in c.points:
 							if linalg.norm(p-q) == 0:
 								if not c.use[q]:
-									coco += 1
+									pointcounter += 1
 								c.use[q] = 1
 								#print "we're using {0} now".format(q)
 								#print "\n", c.use, "\n"
@@ -505,7 +590,7 @@ class Room(object):
 							pass
 							#print "none of the elements of {0} equal {1}".format(c.points, p)
 
-			#print "found", coco, "points"
+			#print "found", pointcounter, "points"
 
 
 		self.adjust_convexes()
@@ -516,10 +601,9 @@ class Room(object):
 		'''check whether or not a given point is solid'''
 		x, y = point
 		x, y = int(x), int(y)
-		x, y = x % self.background.get_width(),y %self.background.get_height()
-		coloratpoint = self.background.get_at((x, y))[:3]
-		return any(self.background.get_at((x, y))[:3])
-
+		x, y = x % self.collisionfield.get_width(),y %self.collisionfield.get_height()
+		#coloratpoint = self.collisionfield.get_at((x, y))
+		return bool(self.pixels[x, y])
 
 	def reduce_sides(self):
 		if TIME_INITIALIZATION: sidestarttime = time.time()
@@ -805,6 +889,7 @@ class Room(object):
 					test.backgroundmarkers.extend([(p,q), (q,r), (r,s), (s,p)])
 
 	def update(self):
+		self.a += 1
 		'''self.timetosave -= 1
 								
 								if self.timetosave < 0:
@@ -816,18 +901,22 @@ class Room(object):
 
 		self.object_directory = [[[] for r in range(rows)] for c in range(cols)]
 
-		key_presses = pygame.event.get(pygame.KEYDOWN)
-		if pygame.key.get_pressed()[pygame.K_m]:
-			self.madness +=1
-			self.madness %=2
-			for bee in self.bees:
-				bee.madness = self.madness
+		'''key_presses = pygame.event.get(pygame.KEYDOWN)
+								if pygame.key.get_pressed()[pygame.K_m]:
+									self.madness +=1
+									self.madness %=2
+									for bee in self.bees:
+										bee.madness = self.madness'''
 
 		if not self.bees:
 			self.topbar.flash("extinction :(")
-			self.generate_bees(self.beecap)
+			self.generate_bees(settings[MAXIMUM_BEES] + 1)
+			self.signal_new_tree = 1
+		elif not self.a % 1:
+			self.painter.renew_coloring_rule(self.bees)
 
 	def generate_bees(self, n):
+		'''yo, make sure self.player is actually valid'''
 		for k in range(n):
 			b = bee.Bee(self)
 			b.randomize_color()
@@ -835,16 +924,22 @@ class Room(object):
 			b.xy = self.player.xy * 1
 			b.randomize_position(100)
 			self.bees.append(b)
+			b.rank = k
+			b.ancestry = (k,)
 
-	def draw(self, surface):
-		if self.a != 0:
-			return
+		self.painter.renew_coloring_rule(self.bees, 1)
+
+	def draw(self, surface, collision_only = 0):
 		'''flat color'''
-		surface.fill(graphics.background)
+
+		if collision_only:
+			surface.fill([0,0,0])
+		else:
+			surface.fill(graphics.background)
 		#surface.fill([70,70,70])
 
 		'''random circles'''
-		if DRAW_RANDOM_CIRCLES:
+		if DRAW_RANDOM_CIRCLES and not collision_only:
 			for k in range(rows * cols * 8):
 				x = random.random()*graphics.world_w
 				y = random.random()*graphics.world_h
@@ -869,6 +964,12 @@ class Room(object):
 		#	for y in range(rows):
 		#		r = pygame.Rect(x*bw, y*bh, bw, bh)
 		#		pygame.draw.rect(surface, [min(27*self.density[x][y] + random.random() * 100, 255)]*3, r)
+		if collision_only:
+			tilecolor = [255,255,255]
+		else:
+			tilecolor = graphics.foreground
+
+		'''Tiles'''
 		for x in range(cols):
 			for y in range(rows):
 				this_tile = self.tiles[x][y] # For each tile
@@ -876,59 +977,68 @@ class Room(object):
 					if USE_IMAGES:
 						surface.blit(this_tile.surface, (x*bw, y*bh)) # Blit image
 					else:
-						pointlist = [ (x*bw + x0, y*bh +y0) for x0, y0 in this_tile.pointlist] # Draw shape
-						if not pointlist:
-							self.start_position[0,0] = x*bw + 16
-							self.start_position[0,1] = y*bh + 16
+						if not this_tile.pointlist:
 							continue
+						pointlist = [ (x*bw + x0, y*bh +y0) for x0, y0 in this_tile.pointlist] # Draw shape
 						g = len(self.side_directory[x][y])
-						pygame.draw.polygon(surface, graphics.foreground, pointlist)
+						if collision_only:
+							pygame.draw.polygon(surface, tilecolor, pointlist)
+						else:
+							pygame.draw.polygon(surface, graphics.foreground, pointlist)
 						#pygame.draw.polygon(surface, [ 255 - min(random.random()*150 + self.density[x][y] * 20, 255) for k in graphics.foreground], pointlist)
 
-		
-		for i, side in enumerate(self.sides): # For all numbered sides
-			start = array(side.side[0])[0]
-			n = array(side.normal)[0]
-			#start = [x - 0.05*y for (x,y) in zip(start, n)]
-			end = array(side.side[1])[0]
-			#end = [x - 0.05*y for (x,y) in zip(end, n)]
+		'''Sides'''
+		if not collision_only:
+			for i, side in enumerate(self.sides): # For all numbered sides
+				start = array(side.side[0])[0]
+				n = array(side.normal)[0]
+				#start = [x - 0.05*y for (x,y) in zip(start, n)]
+				end = array(side.side[1])[0]
+				#end = [x - 0.05*y for (x,y) in zip(end, n)]
 
 
-			font = pygame.font.Font(None, 15)
-			text = font.render(str(i), 1, (255, 255, 255))
-			textpos = text.get_rect(centerx = (start[0] + end[0])/2, centery = (start[1] + end[1])/2)
+				font = pygame.font.Font(None, 15)
+				text = font.render(str(i), 1, (255, 255, 255))
+				textpos = text.get_rect(centerx = (start[0] + end[0])/2, centery = (start[1] + end[1])/2)
 
-			#print "\n\n\n\n\n\n", array(side.side[0])[0], "\n\n\n"#, array(side.side[0])[0]
-			#try:
-				#start, end, text, textpos = self.sidelabels[i]
-			#pygame.draw.line(surface, graphics.outline, start, end, 1) # Draw the offsetted lines
-			approxpoints = []
+				#print "\n\n\n\n\n\n", array(side.side[0])[0], "\n\n\n"#, array(side.side[0])[0]
+				#try:
+					#start, end, text, textpos = self.sidelabels[i]
+				#pygame.draw.line(surface, graphics.outline, start, end, 1) # Draw the offsetted lines
+				approxpoints = []
 
-			if juiciness == 1:
-				'''choose this for juiciness'''
-				pieces, dev, bulge, thickness = 5, 1, 5, 5 
-			else:
-				'''choose this for futuristicness'''
-				pieces, dev, bulge, thickness = 1, 0, 0, 1 
+				juiciness = settings[JUICINESS]
+				if juiciness == 3:
+					'''experimental'''
+					pieces, dev, bulge, thickness = 1, 0, 0, 5
+				elif juiciness == 2:
+					'''choose this for juiciness'''
+					pieces, dev, bulge, thickness = 5, 1, 5, 5 
+				elif juiciness == 1:
+					'''choose this for semijuiciness'''
+					pieces, dev, bulge, thickness = 2, 2, 0, 1
+				else:
+					'''choose this for futuristicness'''
+					pieces, dev, bulge, thickness = 1, 0, 0, 1 
 
-			for x in range(pieces + 1):
-				approxpoints.append([start[0] + x * float(end[0] - start[0]) / pieces, start[1] + x * float(end[1] - start[1])/pieces])
+				for x in range(pieces + 1):
+					approxpoints.append([start[0] + x * float(end[0] - start[0]) / pieces, start[1] + x * float(end[1] - start[1])/pieces])
 
-			for x in range(1, pieces):
-				d = min(x, pieces - x)
-				for i in range(2):
-					#pass
-					approxpoints[x][i] += random.random()*2*dev - dev
-					approxpoints[x][i] -= bulge * float(d) / pieces *n[i]
+				for x in range(1, pieces):
+					d = min(x, pieces - x)
+					for i in range(2):
+						#pass
+						approxpoints[x][i] += (random.random()*2-1)*dev
+						approxpoints[x][i] -= bulge * float(d) / pieces *n[i]
 
-			for x in range(pieces):
-				pygame.draw.line(surface, graphics.outline, approxpoints[x], approxpoints[x+1], thickness) # Draw the offsetted lines
+				for x in range(pieces):
+					pygame.draw.line(surface, graphics.outline, approxpoints[x], approxpoints[x+1], thickness) # Draw the offsetted lines
 
-			#pygame.draw.circle(surface, [0,0,255], [int(k) for k in start], 2)
-			#pygame.draw.circle(surface, [0,0,255], [int(k) for k in end], 2)
-			#surface.blit(text, textpos)
-			#except:
-			#	continue
+				#pygame.draw.circle(surface, [0,0,255], [int(k) for k in start], 2)
+				#pygame.draw.circle(surface, [0,0,255], [int(k) for k in end], 2)
+				#surface.blit(text, textpos)
+				#except:
+				#	continue
 		
 
 	def repair(self, surface):
@@ -1056,7 +1166,7 @@ class Room(object):
 			return [collision.Side(segment, normal) for segment, normal in sides]
 
 	def give_tiles_better_sides(self):
-		starttime = time.time()
+		if TIME_INITIALIZATION: starttime = time.time()
 		'''sends all the tiles a list of the sides that overlap with them'''
 		counter = 1
 		#print "self.sides has", len(self.sides), "elements."
@@ -1079,7 +1189,7 @@ class Room(object):
 				t=self.side_directory[c][r]
 				t[:] = list(set(t))#;print "position", (c,r), "links to", len(t), "sides,", t
 		endtime = time.time()
-		print "telling each grid locations what sides were near it took", endtime - starttime, "seconds"
+		if TIME_INITIALIZATION: print "telling each grid locations what sides were near it took", endtime - starttime, "seconds"
 
 def combine_sides(unoptimised_sides, verbose = 0):
 	no_interior = []

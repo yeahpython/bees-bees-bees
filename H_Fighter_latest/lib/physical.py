@@ -8,6 +8,7 @@ import numpy
 import test
 import itertools
 from graphics import bw, bh
+from game_settings import *
 
 #gravity = matrix([[0, 0.00001]])
 jumpspeed = 0.13
@@ -62,8 +63,8 @@ class Physical(object):
 				self.xy[0,1] += (2*random.random()-1)*dist
 			else:
 				r,c = random.choice(self.room.freespots)
-				self.xy[0,0] = bh * r
-				self.xy[0,1] = bw * c
+				self.xy[0,0] = bw * c
+				self.xy[0,1] = bh * r
 
 			self.xy[0,0] = self.xy[0,0] % graphics.world_w
 			self.xy[0,1] = self.xy[0,1] % graphics.world_h
@@ -111,7 +112,7 @@ class Physical(object):
 		'''uses volume-based methods to remove the physical from surfaces.'''
 		test.add_sticky("push")
 		#wat
-		if not self.grounded or linalg.norm(self.vxy) > 0:
+		if not self.grounded or linalg.norm(self.vxy) > 0.2:
 			self.xy += self.vxy*self.dt
 		r = 0
 		if self.kind == "player":
@@ -135,7 +136,16 @@ class Physical(object):
 			except:
 				continue
 			if c:
-				test.add_sticky('repel')
+
+				w = c.repel(circle = self, radius = r, corners = corners)
+				self.health -= (linalg.norm(w) + 2) / 1000
+				if w[0,1] < -0.1: #and abs(w[0,1]) > 2*abs(w[0,0]):
+					self.grounded = 1
+					self.normals.append(w / linalg.norm(w))
+				self.xy += w
+
+
+				'''test.add_sticky('repel')
 				w = c.repel(circle = self, radius = r, corners = corners)
 				test.record()
 				test.remove_sticky('repel')
@@ -143,12 +153,16 @@ class Physical(object):
 				distance = linalg.norm(w)
 				if not distance:
 					continue
-				self.health -= (distance + 2) / 1000
+				#self.health -= (distance + 2) / 1000
+				if self.kind == "bee" and settings[STICKY_WALLS]:
+					if 0 < settings[STICKY_WALLS] < 1:
+						self.vxy *= (1 - settings[STICKY_WALLS])
+
 				normalizednormal = w / distance
 				if normalizednormal[0,1] < -0.7: #and abs(w[0,1]) > 2*abs(w[0,0]):
 					self.grounded = 1
 				self.normals.append(normalizednormal)
-				self.xy += w 
+				self.xy += w '''
 		test.record("yeahbuddy")
 		test.remove_sticky("push")
 

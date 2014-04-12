@@ -112,52 +112,159 @@ Now have neural network visualization
 And interactive character sprite thing
 Also random map generation
 
+Sunday 29 Dec
 
-Todo / Nodes
-how to evaluate quality of plot
-similarity of two nodes in same player - > should be closer
-strong connection - > should be closer
-otherwise -> should be farther
+- add special stasis mode and bee selection
 
-start with basic distance function though:
-f(x) = -0.00001*(x-50)**2 + 50
+- cancel for tweak variables
 
-make a hat that faces the tracker
+- make a room collision layer
 
-change node colors / sizes by value
+- add options to change settings
 
-watch a node change live
+- change the way settings work:
+	- make a list of settings and access them by index
 
-automatically remove torque?
+- make a utils file for stuff like
+	- finding all the extra locations a shape needs to be drawn
+
+- allow deleting bees
+	- confirm deletions
+
+- add cancel to save bee
+
+- don’t allow overwriting bees
+
+- make map preview not derpy
+
+Monday 30 Dec
+
+- make flash self.color
+
+- dynamically choose colors
+
+- save eye locations
+
+- try to get mouse input
+
+- clean up borders
+
+- use click outside to exit from pause
+
+- made a start to saving levels
+
+Tuesday 31 Dec
+
+- worked out how to pause properly (do clock tick but set dt = 0)
+- made circles match starting color for visualize_intelligence
+- add an eye mutation rate
+- when you load a saved came the player doesn't get pushed? Fix glitch
+- eyes mutating too fast
+- fix view shortcuts
+- fixed silly integer-valued disps
+- error checking for settings
+- added setting for sensitivity to player
+- make it so that there are explicitly random maps
+- make eyes prettier
+- weird huge bee glitch
+- make getChoiceUnbounded snap to mouse from the first frame
+
+Jan 1st
+- bound the body distortion
+- make getChoiceUnbounded actually unbounded
+- made topbar more useable
+- made tons of stuff more modifyable
+- smoothed over infinity glitch in palette
+- made a GLOBABL VARIABLE FOR time_to_quit :D
+- allow quitting from the place where you modify settings
+- make lots of settings clicky. But now they shuffle
+- stop settings from shuffling around so much
+- non-horrible quitting
+
+============
+Todo / Notes
+============
+
+- random maps breaking saves
+
+- fix quitting for neural network visualization mode
+
+- clean up string edit (dirtiness from label
+(maybe generate text from enter string)
+
+- cancel from string edit
+
+- test settings
+
+- make it possible to load physical modes
+
+- hypothesis: madness variable causing crashes?
+
+- make jump time changeable? Don't think anyone cares
+
+- level editor
+
+- fix neural network visualization, esp. titles
+
+- glitch where if you run for a while you can't save
+
+- close while loading map?
+
+- make quitting work properly
+
+- make save more resilient?
+
+- make load more resilient?
+
+- make a proper key down tool
+
+- cache the physics information about a map each time a new map is saved
+- make levels save information like name and randomize
+- automatically find levels?
+
+VISUALIZING NODES:
+- how to evaluate quality of plot
+	- similarity of two nodes in same player - > should be closer
+	- strong connection - > should be closer
+	- otherwise -> should be farther
+- make a hat that faces the tracker?
+- change node colors / sizes by value
+- watch a node change live
+- automatically remove torque?
 
 load bees
--dummy in place
+- dummy in place
 
-change settings
+- options to save settings
 
-save settings
+- live modification of existing map
 
-live modification of existing map
+- bee selection
 
-bee selection
+- bee interaction:
+	- peer-pressure forces / wind
+	- repulsion forces
 
-bee interaction:
-    peer-pressure forces / wind
-    repulsion forces
+- better way of organizing computephysics
 
-better way of organizing computephysics
+- do something smarter than randomness during tile adjustment in random map generation
 
-cache the physics information about a map each time a new map is saved
+- change graphics to make stuff look less rigid
 
-do something smarter than randomness during tile adjustment in random map generation
+- make Q as a quit button ubiquitous
 
-change graphics to make stuff look less rigid
+- make a cleaner interface for generally displaying images
 
-make Q as a quit button ubiquitous
+- only draw bees if they’re in the display
 
-make a cleaner interface for generally displaying images
+- change the way eyes work:
+	- have fixed pixel offsets and check them.
 
-only draw bees if they’re in the display
+- change the way collision works:
+	- draw a triangle with the feet and head and collide it
 
-make a utils file for stuff like
--finding all the extra locations a shape needs to be drawn
+- more procedurally generated stuff
+
+- design a better GUI
+	- make a GUI class with its own update and draw functions
+	- make it clickable?

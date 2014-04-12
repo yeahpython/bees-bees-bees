@@ -14,10 +14,11 @@ class TopBar(object):
 
 	def __init__(self, screen):
 		self.s = screen
-		self.permanent_text = "evade"
+		self.permanent_text = ["evade"]
 		self.flashtext = "start!"
 		self.time_to_clear = 100
 		self.data = []
+		self.saved_text_images = []
 
 	def flash(self, text):
 		self.flashtext = text
@@ -30,15 +31,27 @@ class TopBar(object):
 		#pygame.draw.rect(screen, graphics.foreground, pygame.Rect(0,0, graphics.screen_w, 100))
 
 		# Top text
-		text = font.render(self.permanent_text, 1, info_c)
-		textpos = text.get_rect(left = 20, top = 10)
-		screen.blit(text, textpos)
+		nextmessage = 10
+		for i, message in enumerate(self.permanent_text):
+			text = 0
+			if i < len(self.saved_text_images) and self.saved_text_images[i][0] == message:
+				text = self.saved_text_images[i][1]
+			else:
+				text = font.render(message, 1, info_c)
+				if i == len(self.saved_text_images):
+					self.saved_text_images.append((message, text))
+			textpos = text.get_rect(left = 20, top = nextmessage)
+			nextmessage = textpos.bottom + 5
+			screen.blit(text, textpos)
+
+
 
 		#Data
 		if len(self.data) > 200:
-			self.data = self.data[::2]
+			self.data = [self.data[i:i+2] for i in range(0, len(self.data), 2)]
+			self.data = [sum(l) / len(l) for l in self.data]
 		lines = []
-		l = 100
+		l = 200
 		r = graphics.screen_w - 100
 		if len(self.data) > 1:
 			spacing = float(r - l) / (len(self.data) - 1)
@@ -56,6 +69,8 @@ class TopBar(object):
 					ystart = (a * (top - bottom)) + bottom
 					yend = (b * (top - bottom)) + bottom
 					lines.append(  ((xstart, ystart), (xend, yend))  )
+
+		'''plotting info'''
 		#for p1, p2 in lines:
 		#	pygame.draw.line(screen, info_c, p1, p2, 1)
 			#pygame.draw.circle(screen, graphics.foreground, [int(k) for k in p1], 2)

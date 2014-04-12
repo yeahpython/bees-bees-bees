@@ -10,19 +10,19 @@ import itertools
 import physical
 import brain
 import messages
-
+import utils
+from game_settings import *
 
 
 defaultradius = 15
 forcefieldradius = 40
 killmoderadius = 10
 
-gravity = matrix([[0, 0.0006]]) # was 0.0006
 jumpspeed = 0.4
 jumpvel = matrix([[0, -jumpspeed]])
 maxvel = 0.5
 maxvelx = 0.3
-groundacc = 0.0006
+groundacc = 0.006
 airacc = groundacc * matrix([1,0])
 airresist = 0.001
 friction = 0.01
@@ -97,20 +97,22 @@ class Player(physical.Physical):
 
 		self.counter += 1
 		self.counter2 += 1
-
+		
 
 		if key_states[pygame.K_UP]:
 			if self.feetSupported:
 				self.jetpackfuel = 200
-				self.vxy += jumpvel / 50
+				self.vxy += jumpvel
 
 			if self.jetpackfuel:
-				jv = jumpvel / 200
+				jv = jumpvel / 50
 				consumedfuel = min(dt, self.jetpackfuel)
 				self.vxy += jv * consumedfuel
 				self.jetpackfuel -= consumedfuel
-
-			
+				if self.jetpackfuel < 0:
+					self.jetpackfuel = 0
+		else:
+			self.jetpackfuel = 0
 
 		#modify velocity
 		'''
@@ -124,7 +126,9 @@ class Player(physical.Physical):
 		#	self.vxy += jv# jumpspeed*matrix(self.testvectors[0])/linalg.norm(self.testvectors[0])#jumping
 		#if key_states[pygame.K_DOWN]:
 			#self.vxy -= jumpvel
-		self.vxy += gravity*dt
+
+		self.vxy += matrix([[0, settings[GRAVITY]]])*38/6*dt
+
 
 		if key_states[pygame.K_SPACE]:
 			self.randomize_position()
@@ -145,15 +149,30 @@ class Player(physical.Physical):
 				self.radius = defaultradius
 		'''
 
+		self.feetSupported = self.grounded
+		
+		'''
+		if self.feetSupported and not (key_states[pygame.K_LEFT] or key_states[pygame.K_RIGHT] or key_states[pygame.K_UP]):
+			self.vxy *= (1-friction)**dt # Friction
+			self.vxy *= 0
+			if key_states[pygame.K_LEFT]      : self.vxy += groundacc*self.normals[0]*matrix([[0, -1],[1, 0]])*dt# Left # used to be 
+			elif key_states[pygame.K_RIGHT]   : self.vxy += groundacc*self.normals[0]*matrix([[0, 1],[-1, 0]])*dt# Right
+		else:
+			self.vxy -= airresist*self.vxy*dt*linalg.norm(self.vxy) # Air resistance
+			if key_states[pygame.K_LEFT]     : self.vxy -= airacc*dt# Left 
+			elif key_states[pygame.K_RIGHT]  : self.vxy += airacc*dt# Right
+		'''
 		
 		if self.feetSupported:
 			if key_states[pygame.K_LEFT]:
-				if 0 and self.normals:
+				if self.normals:
+					print "I have normals!"
 					self.vxy += groundacc*self.normals[0]*matrix([[0, -1],[1, 0]])*dt# Left # used to be
 				else:
+					print "I don't have normals!"
 					self.vxy += groundacc*matrix([-1, 0])*dt
 			elif key_states[pygame.K_RIGHT]:
-				if 0 and self.normals:
+				if self.normals:
 					self.vxy += groundacc*self.normals[0]*matrix([[0, 1],[-1, 0]])*dt# Right
 				else:
 					self.vxy += groundacc*matrix([1, 0])*dt
@@ -192,7 +211,6 @@ class Player(physical.Physical):
 				self.randomize_position(10)
 			else:
 				c0, r0 = self.lastnonwall
-				print "player teleported back to ", c0, r0
 				self.xy[0,0] = (c0 + 0.5) * bw
 				self.xy[0,1] = (r0 + 0.5) * bh
 				self.vxy *= 0.5
@@ -235,141 +253,142 @@ class Player(physical.Physical):
 
 
 
-		for x in range(-1, 2, 1):
-			if x and 0 < ixy[0,0] + self.radius * -x < graphics.world_w:
-				continue
-			for y in range(-1, 2, 1):
-				if y and 0 < ixy[0,1] + self.radius * -y < graphics.world_h:
-					continue
+		for x,y in utils.body_copies(self.xy, self.radius):
+			px = ixy[0,0] + x*graphics.world_w
+			py = ixy[0,1] + y*graphics.world_h
+			#pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
 
-				px = ixy[0,0] + x*graphics.world_w
-				py = ixy[0,1] + y*graphics.world_h
-				#pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
+			pi = 3.1415926
 
-				pi = 3.1415926
+			'''shoulders'''
+			shouldershift = 0#max(min(int(10*self.vxy[0,0]), 10), -10)
+			shoulderx = px + shouldershift
+			shouldery = py - int(self.radius*0.7)
+			if self.losinghealth:
+				if self.beepushes:
+					n = random.choice(self.beepushes)
+					self.offset += n * 0.5
+			
+			self.offset *= 0.95
 
-				'''shoulders'''
-				shoulderx = px + int(10*self.vxy[0,0])
-				shouldery = py-int(self.radius*0.7)
-				if self.losinghealth:
-					if self.beepushes:
-						n = random.choice(self.beepushes)
-						self.offset += n * 0.5
-				
-				self.offset *= 0.95
+			for i in range(2):
+				if self.offset[0,i] > 5:
+					self.offset[0,i] = 5
+				if self.offset[0,i] < -5:
+					self.offset[0,i] = -5
 
-				offsetx = int(self.offset[0,0])
-				offsety = int(self.offset[0,1])
+			offsetx = int(self.offset[0,0])
+			offsety = int(self.offset[0,1])
 
-				self.beepushes = []
+			self.beepushes = []
 
-				shoulderx += offsetx
-				shouldery += offsety
-				
-				shoulders = (shoulderx, shouldery)
+			shoulderx += offsetx
+			shouldery += offsety
+			
+			shoulders = (shoulderx, shouldery)
 
-				'''head'''
-				headx = shoulderx
-				heady = shouldery-int(self.radius*0.1)
-				#headx -= offsetx/2
-				#heady -= offsety/2
+			'''head'''
+			headx = shoulderx
+			heady = shouldery-int(self.radius*0.1)
+			#headx -= offsetx/2
+			#heady -= offsety/2
 
-				head = int(headx), int(heady)
-				pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
+			head = int(headx), int(heady)
+			pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
 
-				'''groin'''
-				groinx = px
-				groiny = py+int(self.radius*0.1)
+			'''groin'''
+			groinx = px
+			groiny = py+int(self.radius*0.1)
 
-				groinx += offsetx / 2
-				groiny += offsety
+			groinx += offsetx / 2
+			groiny += offsety
 
-				groin = (groinx, groiny)
+			groin = (groinx, groiny)
 
-				'''neck'''
-				pygame.draw.line(surface, color, head, shoulders, 2)
+			'''neck'''
+			pygame.draw.line(surface, color, head, shoulders, 2)
 
-				'''torso'''
-				pygame.draw.line(surface, color, shoulders, groin, 2)
+			'''torso'''
+			pygame.draw.line(surface, color, shoulders, groin, 2)
 
 
-				'''right leg'''
-				rightfootx = px + 0.4*self.radius - 3 * self.vxy[0,0] * self.radius
-				rightfooty = py+int(self.radius) + 0.1*self.radius
-				rightfootx = px + 0.4*self.radius*math.cos(self.walkingspeed*pi*self.xy[0,0])
-				if abs(self.vxy[0,0]) > 0.01:
-					rightfooty = py+int(self.radius)
-					step = 0.1*self.radius*math.sin(self.walkingspeed*pi*self.xy[0,0])
-					if step < 0:
-						step *= abs(self.offset[0,1]*5 + 1)
-						rightfooty += step
-				rightfoot = rightfootx, rightfooty
-				pygame.draw.line(surface, color, groin, rightfoot, 2)
-				#pygame.draw.line(surface, color, (px,py+int(self.radius*0.2)), (px + self.radius*math.cos(0.4*pi), py+inself.radius*math.sin(0.4*pi)), 1)
+			'''right leg'''
+			rightfootx = px + 0.4*self.radius - 3 * self.vxy[0,0] * self.radius
+			rightfooty = py+int(self.radius) + 0.1*self.radius
+			rightfootx = px + 0.4*self.radius*math.cos(self.walkingspeed*pi*self.xy[0,0])
+			if abs(self.vxy[0,0]) > 0.01:
+				rightfooty = py+int(self.radius)
+				step = 0.1*self.radius*math.sin(self.walkingspeed*pi*self.xy[0,0])
+				if step < 0:
+					step *= abs(self.offset[0,1]*5 + 1)
+					rightfooty += step
+			rightfoot = rightfootx, rightfooty
+			pygame.draw.line(surface, color, groin, rightfoot, 2)
+			#pygame.draw.line(surface, color, (px,py+int(self.radius*0.2)), (px + self.radius*math.cos(0.4*pi), py+inself.radius*math.sin(0.4*pi)), 1)
 
-				'''left leg'''
-				leftfootx = px - 0.4*self.radius - 3 * self.vxy[0,0] * self.radius
-				leftfooty = py+int(self.radius) + 0.1*self.radius
-				leftfootx = px - 0.4*self.radius*math.cos(self.walkingspeed*pi*self.xy[0,0])
-				if abs(self.vxy[0,0]) > 0.01:
-					leftfooty = py+self.radius
-					step = - 0.1*self.radius*math.sin(self.walkingspeed*pi*self.xy[0,0])
-					if step < 0:
-						step *= abs(self.offset[0,1]*5 + 1)
-						leftfooty += step
-				leftfooty = int(leftfooty)
-				leftfoot = leftfootx, leftfooty
-				pygame.draw.line(surface, color, groin, leftfoot, 2)
+			'''left leg'''
+			leftfootx = px - 0.4*self.radius - 3 * self.vxy[0,0] * self.radius
+			leftfooty = py+int(self.radius) + 0.1*self.radius
+			leftfootx = px - 0.4*self.radius*math.cos(self.walkingspeed*pi*self.xy[0,0])
+			if abs(self.vxy[0,0]) > 0.01:
+				leftfooty = py+self.radius
+				step = - 0.1*self.radius*math.sin(self.walkingspeed*pi*self.xy[0,0])
+				if step < 0:
+					step *= abs(self.offset[0,1]*5 + 1)
+					leftfooty += step
+			leftfooty = int(leftfooty)
+			leftfoot = leftfootx, leftfooty
+			pygame.draw.line(surface, color, groin, leftfoot, 2)
 
-				rightpoint = px + 0.8 * self.radius, py + 0.8 * self.radius
-				leftpoint = px - 0.8 * self.radius, py + 0.8 * self.radius
+			rightpoint = px + 0.8 * self.radius, py + 0.8 * self.radius
+			leftpoint = px - 0.8 * self.radius, py + 0.8 * self.radius
 
-				rightpoint, leftpoint = [int(x) for x in rightpoint], [int(x) for x in leftpoint]
+			rightpoint, leftpoint = [int(x) for x in rightpoint], [int(x) for x in leftpoint]
 
-				self.feetSupported = self.room.pointcheck(leftfoot) or self.room.pointcheck(rightfoot) or self.room.pointcheck(rightpoint) or self.room.pointcheck(leftpoint)
-				#print "feet supported:", self.feetSupported
+			#self.feetSupported = self.room.pointcheck(leftfoot) or self.room.pointcheck(rightfoot) or self.room.pointcheck(rightpoint) or self.room.pointcheck(leftpoint)
+			#print "feet supported:", self.feetSupported
 
-				''''right arm'''
-				#howfar = 0.3
-				#if self.vxy[0,0] >= 0:
-				#	howfar = 0.3 - 2.3 * (self.vxy[0,0])
-				#self.righta = 0.9 * self.righta + 0.1 * howfar
-				#pygame.draw.line(surface, color, shoulders, (px + 0.7*self.radius*math.cos(self.righta*pi), py+0.7*self.radius*math.sin(self.righta*pi)), 2)
-				
-				righthandx = shoulderx + 0.4*self.radius * math.cos(self.walkingspeed*pi*self.xy[0,0]) * (0.2+abs(self.vxy[0,0]))**0.5 * 2
-				righthandy = shouldery + self.radius
-				righthandy += int(self.offset[0,1] * 5)
-				righthand = (righthandx, righthandy)
-				pygame.draw.line(surface, color, shoulders, righthand, 2)
+			''''right arm'''
+			#howfar = 0.3
+			#if self.vxy[0,0] >= 0:
+			#	howfar = 0.3 - 2.3 * (self.vxy[0,0])
+			#self.righta = 0.9 * self.righta + 0.1 * howfar
+			#pygame.draw.line(surface, color, shoulders, (px + 0.7*self.radius*math.cos(self.righta*pi), py+0.7*self.radius*math.sin(self.righta*pi)), 2)
+			
+			righthandx = shoulderx + 0.4*self.radius * math.cos(self.walkingspeed*pi*self.xy[0,0]) * (0.2+min(abs(self.vxy[0,0]), 0.1))**0.5 * 2
+			righthandy = shouldery + self.radius
+			righthandy -= abs(int(self.offset[0,1] * 5))
+			righthand = (righthandx, righthandy)
+			pygame.draw.line(surface, color, shoulders, righthand, 2)
 
-				'''left arm'''
-				#howfar = 0.7
-				#if self.vxy[0,0] <= 0:
-				#	howfar = 0.7 - 2.3 * (self.vxy[0,0])
-				#self.lefta = 0.9 * self.lefta + 0.1 * howfar
-				#pygame.draw.line(surface, color, shoulders, (px + 0.7*self.radius*math.cos(self.lefta*pi), py+0.7*self.radius*math.sin(self.lefta*pi)), 2)
-				
-				lefthandx = shoulderx - 0.4*self.radius * math.cos(self.walkingspeed*pi*self.xy[0,0]) * (0.2+abs(self.vxy[0,0]))**0.5 * 2
-				lefthandy = shouldery + self.radius
-				lefthandy += int(self.offset[0,1] * 5)
-				lefthand = (lefthandx, lefthandy)
-				pygame.draw.line(surface, color, shoulders, lefthand, 2)
+			'''left arm'''
+			#howfar = 0.7
+			#if self.vxy[0,0] <= 0:
+			#	howfar = 0.7 - 2.3 * (self.vxy[0,0])
+			#self.lefta = 0.9 * self.lefta + 0.1 * howfar
+			#pygame.draw.line(surface, color, shoulders, (px + 0.7*self.radius*math.cos(self.lefta*pi), py+0.7*self.radius*math.sin(self.lefta*pi)), 2)
+			
+			lefthandx = shoulderx - 0.4*self.radius * math.cos(self.walkingspeed*pi*self.xy[0,0]) * (0.2+min(abs(self.vxy[0,0]), 0.1))**0.5 * 2
+			lefthandy = shouldery + self.radius
+			lefthandy -= abs(int(self.offset[0,1] * 5))
+			lefthand = (lefthandx, lefthandy)
+			pygame.draw.line(surface, color, shoulders, lefthand, 2)
 
-				ffcolor = [255, 255, 255]
-				#if self.losinghealth:
-				#	ffcolor = [255, 0, 0]
+			ffcolor = [255, 255, 255]
+			#if self.losinghealth:
+			#	ffcolor = [255, 0, 0]
 
-				'''force field'''
-				'''if self.losinghealth:
-					pygame.draw.circle(surface, self.displaycolor, (px, py), int(self.forcefield), 1)
-					'''
+			'''force field'''
+			'''if self.losinghealth:
+				pygame.draw.circle(surface, self.displaycolor, (px, py), int(self.forcefield), 1)
+				'''
 
-				#pygame.draw.circle(surface, [55,255,155], (px, py), int(self.radius*0.5), 0)
+			#pygame.draw.circle(surface, [255,255,0], (px, py), int(self.radius), 1)
 
-				#centercolor = [0, 0, 0]
-				#if self.losinghealth:
-				#	centercolor = [255, 200, 0]
-				#pygame.draw.circle(surface, centercolor, (px, py), int(0.1*self.radius))
+			#centercolor = [0, 0, 0]
+			#if self.losinghealth:
+			#	centercolor = [255, 200, 0]
+			#pygame.draw.circle(surface, centercolor, (px, py), int(0.1*self.radius))
 
 		# My velocity
 		#endxy = ixy+numpy.round_(self.vxy*10)

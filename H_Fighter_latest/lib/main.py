@@ -1,6 +1,6 @@
 import pickle
 import os
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0,0)
+#os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0,0)
 
 import pygame
 if not pygame.font: print 'Warning, fonts disabled'
@@ -25,9 +25,13 @@ import topbar
 import brain
 import zoo
 import time
+import clicks
+import game_progress
+import familytree
 from numpy import linalg
 from random import choice
-import settings
+from game_settings import *
+import species_visualization
 
 
 game_title = "evade"
@@ -39,23 +43,66 @@ def initialization():
 	tile.init()
 
 def preparelevel(screen, level):
-	graphics.load(os.path.join("data", "rooms", level))
+	if level == "random map":
+		return prepareRandomLevel(screen)
+	elif level == "Random 35 x 35":
+		return prepareRandomLevel(screen, 35, 35)
+	elif level == "Random 60 x 60":
+		return prepareRandomLevel(screen, 60, 60) 
+	else:
+		graphics.load(os.path.join("data", "rooms", level))
+		world = pygame.Surface((graphics.world_w, graphics.world_h))
+		t = topbar.TopBar(screen)
+		r = room.load(os.path.join("data", "rooms", level))
+		test.mark(r.background)
+		r.topbar = t
+		return world, t, r
+
+def prepareRandomLevel(screen, cols = 0, rows = 0):
+	messages.colorBackground()
+	if not cols:	
+		cols = int(getChoiceUnbounded("Room width?", [str(x) for x in range(30, 61, 5)]))
+	if not rows:
+		rows = int(getChoiceUnbounded("Room height?", [str(x) for x in range(20, 61, 5)]))
+	room.globalize_dimensions(rows, cols)
+
+	lines = [" " * cols for x in range(rows+1)]
+	room.randomlymodify(lines)
+	tiles = []
+	for c in range(cols):
+		tiles.append([])
+		for r in range(rows):
+			tiles[c].append(tile.tile[lines[r][c]])
+	r = room.Room(tiles, lines)
+	graphics.extract_dimensions(lines)
+
 	world = pygame.Surface((graphics.world_w, graphics.world_h))
 	t = topbar.TopBar(screen)
-	r = room.load(os.path.join("data", "rooms", level))
 	test.mark(r.background)
 	r.topbar = t
 	return world, t, r
 
-def getString(allowed_keys = [], string = ""):
+def getString(allowed_keys = [], string = "", textpos = 0, message = ""): # Should be able to exit nonhorribly now
+	'''returns -1 if window is closed
+	and 0 for cancel'''
+	disp = pygame.display.get_surface()
+	bg = pygame.Surface((disp.get_width(), disp.get_height()))
+	bg.blit(disp, (0,0))
 	font = pygame.font.Font(None, 30)
-	box = pygame.Rect(0, 0, 300, 50)
-	box.centerx = graphics.screen_w / 2
-	box.centery = graphics.screen_h / 2
+	box = 0
+	if textpos:
+		box = textpos
+	else:
+		box = pygame.Rect(0, 0, 300, 50)
+		box.centerx = graphics.screen_w / 2
+		box.centery = graphics.screen_h / 2
 	s = pygame.display.get_surface()
 
+	prompt = font.render(message, 1, graphics.outline)
+	promptpos = prompt.get_rect(centerx = box.centerx, bottom = box.y - 10)
+
 	pygame.draw.rect(s, graphics.foreground, box, 0)
-	pygame.draw.rect(s, [255, 255, 255], box, 1)
+	pygame.draw.rect(s, graphics.outline, box, 1)
 	pygame.display.flip()
 	clock = pygame.time.Clock()
 	previous_key_states = []
@@ -68,9 +115,22 @@ def getString(allowed_keys = [], string = ""):
 		allowed_keys.append(pygame.K_SPACE)
 
 	allowed_keys += [pygame.K_BACKSPACE, pygame.K_RETURN]
-
-	while not pygame.event.get(pygame.QUIT):
+	global time_to_quit
+	while True:
 		clock.tick(60)
+
+		'''check for quit'''
+		if pygame.event.get(pygame.QUIT):
+			time_to_quit = True
+			return -1
+		clicks.get_more_clicks()
+
+		'''check for cancel'''
+		if clicks.mouseups[0]:
+			x,y = pygame.mouse.get_pos()
+			if not box.collidepoint(x,y):
+				return string
+
 		key_states = pygame.key.get_pressed()
 		if previous_key_states:
 			key_downs = [new and not old for new, old in zip(key_states, previous_key_states)]
@@ -82,6 +142,7 @@ def getString(allowed_keys = [], string = ""):
 				if key == pygame.K_BACKSPACE:
 					string = string[:-1]
 				elif key == pygame.K_RETURN:
+					disp.blit(bg, (0,0))
 					return string
 				elif len(string) < 20:
 					if key == pygame.K_SPACE:
@@ -91,31 +152,45 @@ def getString(allowed_keys = [], string = ""):
 				redraw = 1
 
 		if redraw:
-			text = font.render(string, 1, [255, 255, 255])
-			textpos = text.get_rect(centerx = s.get_width()/2, centery = s.get_height()/2)
-			pygame.draw.rect(s, graphics.foreground, box, 0)
+			s.blit(prompt, promptpos)
+
+
+			text = font.render(string, 1, graphics.outline)
+			textpos2 = text.get_rect(centerx = box.centerx, centery = box.centery)
+			pygame.draw.rect(s, [155,0,200], box, 0)
 			#box = text.get_rect(centerx = s.get_width()/2, height = 50, centery = s.get_height()/2)
-			pygame.draw.rect(s, [255, 255, 255], box, 1)
-			s.blit(text, textpos)
+			pygame.draw.rect(s, graphics.outline, box, 1)
+			s.blit(text, textpos2)
 			pygame.display.flip()
 			redraw = 0
 
 		previous_key_states = key_states[:]
 		pygame.event.pump()
 
-def waitForEnter():
-	messages.say("Press [enter] to continue", down = 1)
+def waitForEnter(hidemessage = 0):
+	if not hidemessage:
+		messages.say("Press [enter] to continue", down = 1)
 	pygame.display.flip()
 	clock = pygame.time.Clock()
-	while not pygame.event.get(pygame.QUIT):
+	while True:
 		clock.tick(60)
+		if pygame.event.get(pygame.QUIT):
+			global time_to_quit
+			time_to_quit = True
+			break
+
+		clicks.get_more_clicks()
+		if clicks.mouseups[0]:
+			break
 		key_states = pygame.key.get_pressed()
 		if key_states[pygame.K_RETURN]:
 			break
-		pygame.event.pump()
 
-def waitForKey(key):
-	messages.say("Press " + pygame.key.name(key) +" to exit", down = 1)
+def waitForKey(key, message = 0):
+	if message:
+		messages.say(message, down = 1)
+	else:
+		messages.say("Press " + pygame.key.name(key) +" to exit", down = 1)
 	pygame.display.flip()
 	clock = pygame.time.Clock()
 	while not pygame.event.get(pygame.QUIT):
@@ -123,28 +198,42 @@ def waitForKey(key):
 		key_states = pygame.key.get_pressed()
 		if key_states[key]:
 			break
+		if pygame.event.get(pygame.QUIT):
+			global time_to_quit
+			time_to_quit = True
+			break
 		pygame.event.pump()
 
-def getChoice(title, options):
-	messages.colorBackground()
-	messages.say(title)
-	messagecount = 1
-	for key, meaning in options.iteritems():
-		messagecount = messages.say("[" + pygame.key.name(key) + "]: " + meaning, down = messagecount)
-	pygame.display.flip()
-	clock = pygame.time.Clock()
-	n = None
-	while not pygame.event.get(pygame.QUIT):
-		clock.tick(60)
-		key_presses = pygame.event.get(pygame.KEYDOWN)
-		key_states = pygame.key.get_pressed()
-		for key in options:
-			if key_states[key]:
-				return key
-		pygame.event.pump()
+def getChoiceUnbounded(title, options, allowcancel = False):
+	page_size = 30
+	curr = 0
+	pages = (len(options)-1) / page_size + 1
+	if pages <= 1:
+		return getChoiceBounded(title, options, allowcancel)
+	else:
+		while True:
+			view = ["prev", "next"] + options[curr::pages]
+			out = getChoiceBounded(title + " (Page %s of %s)" % (curr + 1, pages), view, allowcancel)
+			if out == "prev":
+				curr -= 1
+				curr %= pages
+			elif out == "next":
+				curr += 1
+				curr %= pages
+			else:
+				return out
 
-def getChoiceUnbounded(title, options):
-	
+def getChoiceBounded(title, given_options, allowcancel = False):
+	'''Prompts you to choose one of the options. If the user clicks outside the box this returns None.'''
+
+	options = given_options[:]
+	if allowcancel:
+		options.append("cancel")
+
+	disp = pygame.display.get_surface()
+	bg = pygame.Surface((disp.get_width(), disp.get_height()))
+	bg.blit(disp, (0,0))
+
 	clock = pygame.time.Clock()
 	n = None
 
@@ -156,20 +245,43 @@ def getChoiceUnbounded(title, options):
 
 	hborder = 15
 
-	optiondisplay = pygame.Surface((min(300, graphics.screen_w - 2*hborder), 15 * (len(options) + 3)))
-	#selectionimage = pygame.Surface((50, 50), flags = pygame.SRCALPHA)
-	#pygame.draw.circle(selectionimage, [255, 0, 0], [25, 25], 10, 0)
+	optiondisplay = pygame.Surface((min(300, graphics.screen_w - 2*hborder), min(15 * (len(options) + 3), graphics.screen_h - 2 * hborder) ))
 	selectionimage = pygame.Surface((optiondisplay.get_width() - 10, 50), flags = pygame.SRCALPHA)
 
-	box = pygame.Rect((0,0), (selectionimage.get_width() - 10, 15))
-	pygame.draw.rect(selectionimage, [255, 255, 255], box, 1)
+	box = pygame.Rect((0,0), (selectionimage.get_width(), 15))
+	pygame.draw.rect(selectionimage, graphics.outline, box, 1)
 
 	smallsteps = 0
 	slowness = 6
 
 	previous_key_states = []
+	wet = 0
 
-	while not pygame.event.get(pygame.QUIT):
+	oldxy = (-1, -1)
+
+	# lean right
+	#dest = optiondisplay.get_rect(right = graphics.screen_w - 15, top = 15)
+	dest = optiondisplay.get_rect(centerx = graphics.screen_w/2, centery = graphics.screen_h/2)
+
+	while True:
+		if pygame.event.get(pygame.QUIT):
+			print "quit from getChoiceUnbounded"
+			global time_to_quit
+			time_to_quit = True
+			return "quit"
+		clicks.get_more_clicks()
+		wet += 1
+
+		x,y = pygame.mouse.get_pos()
+
+		if oldxy != (x,y):
+			oldxy = x,y
+			i = (y - dest.y - 5) / 15 - 2
+			if 0 <= i < len(options):
+				if dest.left < x < dest.right and i != currpos:
+					currpos = i
+					updateview = 1
+
 		if updateview:
 			messages.colorBackground(surface = optiondisplay)
 			messages.say(title, surface = optiondisplay, size = "small")
@@ -182,7 +294,9 @@ def getChoiceUnbounded(title, options):
 			optiony = graphics.screen_h - 15 * (len(options) + 4)
 			optionpos = optionx, optiony
 
-			dest = optiondisplay.get_rect(centerx = graphics.screen_w / 2, centery = graphics.screen_h / 2)
+			#make it top right
+			#center the options
+			#dest = optiondisplay.get_rect(centerx = graphics.screen_w / 2, centery = graphics.screen_h / 2)
 
 			disp.blit(optiondisplay, dest, special_flags = 0)
 
@@ -191,13 +305,22 @@ def getChoiceUnbounded(title, options):
 			pygame.display.flip()
 			updateview = 0
 
+		if clicks.mouseups[0]:
+			oldxy = x,y
+			i = (y - dest.y - 5) / 15 - 2
+			if 0 <= i < len(options) and dest.left < x < dest.right:
+				disp.blit(bg, (0,0))
+				return options[currpos]
+			elif allowcancel: 
+				disp.blit(bg, (0,0))
+				return "cancel"
+
 		clock.tick(60)
 
 		'''stupid mac...'''
 		#key_presses = pygame.event.get()
 		key_states = pygame.key.get_pressed()
 		#event = pygame.event.poll()
-		pygame.event.pump()
 
 		#if event.type != pygame.NOEVENT:
 		#	print event
@@ -207,56 +330,75 @@ def getChoiceUnbounded(title, options):
 			smallsteps -= 1
 			if smallsteps == 0 or (previous_key_states and not previous_key_states[pygame.K_UP]):
 				smallsteps = slowness
-				if currpos > 0:
-					currpos -= 1
-					updateview = 1
+				currpos -= 1
+				currpos %= len(options)
+				updateview = 1
 
 		#if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
 		elif key_states[pygame.K_DOWN]:
 			smallsteps -= 1
 			if smallsteps == 0 or (previous_key_states and not previous_key_states[pygame.K_DOWN]):
 				smallsteps = slowness
-				if currpos < len(options) - 1:
-					currpos += 1
-					updateview = 1
+				currpos += 1
+				currpos %= len(options)
+				updateview = 1
 
 		elif key_states[pygame.K_RETURN] and (previous_key_states and not previous_key_states[pygame.K_RETURN]):
+			disp.blit(bg, (0,0))
 			return options[currpos]
 
 		elif key_states[pygame.K_q]:
+			disp.blit(bg, (0,0))
 			return
 
 		previous_key_states = key_states[:]
+		pygame.event.pump()
 
-
-levels = ["5.txt", "1.txt", "ringmap.txt", "3.txt", "dumb room.txt"]
+levels = ["5.txt", "1.txt", "ringmap4.txt", "3.txt", "dumb room.txt", "ringmap5.txt", "dumb room.txt"]
 
 files = {
 	"tiny debugger" : 1,
 	"ring map" : 2,
 	"vertical map" : 3,
 	"horizontal map" : 4,
+	"closed ring map" : 5,
+	"walls" : 6,
 	"huge map" : 0,
 }
 
 def enteredlevel(allowcancel = 1):
- 	options = ["tiny debugger", "ring map", "vertical map", "horizontal map", "huge map", "quit"]
-	if allowcancel:
-		options += ["cancel"]
+	# always allows quit and cancel
+	# deals with cancel and quit elegantly
+ 	options = ["tiny debugger", "random map", "ring map", "vertical map", "horizontal map", "huge map", "closed ring map", "walls", "quit"]
 
-	choice = getChoiceUnbounded("Select a level (UP / DOWN / ENTER):", options)
+	choice = getChoiceUnbounded("Select a level:", options, allowcancel = allowcancel)
+
 	if choice in files:
 		return levels[files[choice]]
-	return choice
+	else:
+		return choice
 
 def fiddle(tens, units):
 	return 10 * tens + units
 
+def close(r):
+	'''This is a convenient function for closing for when the room is in your namespace'''
+	if pygame.event.get(pygame.QUIT):
+		print "Trying to quit properly..."
+		game_progress.save_game(r)
+		return True
+	else:
+		return False
+
+time_to_quit = False
+
 def main_loop():
+	print "\n\n\n\n\n\n\n\n\n\n\n\n* * * * * NEW GAME * * * * *"
+
 	'''these things only need to happen once'''
 	screen = pygame.display.get_surface()
-	screen.fill([120,255,200])
-
+	screen.fill(graphics.background)
+	load_settings()
 
 	messages.screen = screen
 
@@ -264,74 +406,190 @@ def main_loop():
 	dt=0
 	font = pygame.font.Font(None, 30)
 
-	'''these are level-specific'''
-	level = enteredlevel(allowcancel = 0)
-	if level == "quit":
-		return
-	world, t, r = preparelevel(screen, level)
+	world, t, r = 0, 0, 0
+	
+	loadedSavedGame = 0
+	
+	if getChoiceUnbounded("Load saved game?", ["yes", "no"]) == "yes":
+		r = game_progress.load_game()
+		
+	if r:
+		messages.say("Loading saved game", down = 4)
+		pygame.display.flip()
+		world = pygame.Surface((graphics.world_w, graphics.world_h))
+		r.topbar.s = screen
+		t = r.topbar
+		loadedSavedGame = 1
+	else:
+		'''these are level-specific'''
+		level = enteredlevel(allowcancel = 0)
+		if level == "quit":
+			return
+		world, t, r = preparelevel(screen, level)
+	
 	p = player.Player(r)
-
 
 	#h = zoo.Beehive()
 	h = zoo.Beehive("the fact that any argument is passed here means that I'll load saved bees")
 
-	
-
 	c = camera.Camera(p, world, screen, r)
+	c.jump_to_player()
+
+	myfamilytree = familytree.FamilyTree()
+	myspeciesplot = species_visualization.SpeciesPlot()
 
 	#Generating new bees
-	r.bees = []
 	#r.bees = h.preserved_bees(r, p)
-
-	r.generate_bees(r.beecap)
+	if loadedSavedGame:
+		for b in r.bees:
+			b.player = p
+	else:
+		r.generate_bees(settings[MAXIMUM_BEES])
 	r.h = h
-	for b in r.bees:
-		b.randomize_position()
-
-	'''loadedbeenames = []
-				for b in h.specimens:
-					loadedbeenames.append(b[0])
-			
-				loadedbeenames.append("cancel")
-			
-				x = getChoiceUnbounded("Here are the saved bees", loadedbeenames)'''
+	#for b in r.bees:
+	#	b.randomize_position()
 
 	framecount = 0
-	while not pygame.event.get(pygame.QUIT): # Main game loop
+
+	previous_key_states = []
+	key_ups = []
+
+	global time_to_quit
+
+	last_data_update = -20
+
+	while not close(r): # Main game loop # Don't need cancel and quit works
+
+		if time_to_quit:
+			'''probably going to add a bunch of shutdown stuff here'''
+			print "Quitting indirectly at main loop. Saving room..."
+			game_progress.save_game(r)
+			break
+
+		clicks.get_more_clicks()
 		framecount += 1
 
 		test.begin_timing(test.segs, test.segdescriptors)
-		world.blit(r.background, (0,0))
-
 		#Handle player input
 		key_presses = pygame.event.get(pygame.KEYDOWN)
 		key_states = pygame.key.get_pressed()
 
-		'''when you press o'''
-		if key_states[pygame.K_o]:
-			options = ["Move to another map", "Examine bee", "Save bees", "Load bees", "Tweak variables", "Modify map", "Back", "Quit"]
-			choice = getChoiceUnbounded("select option", options)
+		if previous_key_states:
+			key_ups = [old and not new for new, old in zip(key_states, previous_key_states)]
+		else:
+			key_ups = [0 for x in key_states]
 
-			if choice != "Back":
-				if choice == "Quit":
-					return
+		previous_key_states = key_states[:]
 
-				elif choice == "Move to another map":
-					level = enteredlevel()
+		if key_ups[pygame.K_e]:
+			if r.bees:
+				#for x in r.bees + r.food + [p] + r.bullets:
+				#	x.draw(world)
+				#c.draw()
+				#pygame.display.flip()
+				'''this is for picking the closest bee'''
+				'''minbee = r.bees[0]
+				for b in r.bees:
+					if linalg.norm(b.xy - p.xy) < linalg.norm(minbee.xy - p.xy):
+						minbee = b'''
+
+				minbee = random.choice(r.bees)
+				messages.say("Loading", down = 1)
+				pygame.display.flip()
+				minbee.visualize_intelligence(world, c)
+				p.displaycolor = [255,255,255]
+				pygame.draw.circle(world, [0,0,0], array(p.xy.astype(int))[0], int(p.forcefield))
+				pygame.draw.circle(world, [255,255,255], array(p.xy.astype(int))[0], int(p.forcefield), 1)
+				p.draw(world)
+				#c.xy = minbee.xy * 1
+				#c.updatesight()
+				c.draw()
+				pygame.display.flip()
+				minbee.sample_path(world)
+				c.draw()
+				pygame.display.flip()
+				waitForKey(pygame.K_w)
+				dt = clock.tick(400)
+				dt = 0 #Trick the engine into thinking no time has passed
+
+		if time_to_quit:
+			game_progress.save_game(r)
+			return
+
+		test.record()
+		world.blit(r.background, (0,0))
+		test.record("blitting background")
+		#world.blit(r.collisionfield, (0,0))
+
+
+		togglers = {
+		pygame.K_r : SHOW_EYES,
+		pygame.K_h : SHOW_HELP,
+		pygame.K_t : GENERATE_RANDOM_MAP,
+		pygame.K_n : SHOW_NAMES,
+		}
+
+		for key, variable in togglers.iteritems():
+			if key_ups[key]:
+				settings[variable] = not settings[variable]
+
+
+		if key_ups[pygame.K_m]:
+			print framecount
+			r.madness +=1
+			r.madness %=4
+			for bee in r.bees:
+				bee.madness = r.madness
+
+		if key_ups[pygame.K_a]:
+			r.stasis = not r.stasis
+
+		if key_ups[pygame.K_z]:
+			print pygame.mouse.get_pos()
+
+
+
+		'''All mouse click stuff'''
+		if clicks.mouseups[0]:
+			for b in r.bees:
+				b.skipupdate = True
+			options = ["Move to another map", "Random 35 x 35", "Random 60 x 60", "Examine bee", "Save bees", "Extinction", "Load bees", "Delete bees", "Tweak variables", "Modify map", "View Shortcuts", "quit"]
+			choice = getChoiceUnbounded("select option", options, allowcancel = 1)
+
+			if choice != "cancel":
+				if choice == "quit":
+					time_to_quit = True
+
+				elif choice in ["Move to another map", "Random 35 x 35", "Random 60 x 60"]:
+					level = choice
+					if choice == "Move to another map":
+						level = enteredlevel()
 					if level == "quit":
 						return
 
 					if level != "cancel":
 						print level
 						test.clear_tests()
+						test.sides = []
+						test.vectors = [(0,0), (0,0)]
+						test.indicators = []
+						test.lines = []
+						test.tiles = []
+						test.backgroundmarkers = []
+						test.backgroundpointmarkers = []
+						test.segs = [] #a list of times
+						test.segdescriptors = [] # a list of descriptors or hashtags to say what's happening during the time
+						test.stickylabels = []
 						world, t, r2 = preparelevel(screen, level)
 						p = player.Player(r2)
 
 						r2.bees = r.bees
+						r2.deadbees = r2.deadbees
 
 						r = r2
-						h = zoo.Beehive()
-						#h = zoo.Beehive("the fact that any argument is passed here means that I'll load saved bees")
+						h.savedata()
+						#h = zoo.Beehive()
+						h = zoo.Beehive("the fact that any argument is passed here means that I'll load saved bees")
 						c = camera.Camera(p, world, screen, r)
 						c.xy = 1 * p.xy
 						r.h = h
@@ -342,6 +600,14 @@ def main_loop():
 							b.player = p
 							b.randomize_position()
 
+				elif choice == "Extinction":
+					if getChoiceUnbounded("Kill all bees?", ["no", "yes"], allowcancel = 1) == "yes":
+						for b in r.bees:
+							b.health = -0
+						for b in r.bees + r.deadbees:
+							b.dead = 2
+						t.data = []
+
 				elif choice == "Examine bee":
 					'''this thing lets you examine the closest bee to you'''
 					if r.bees:
@@ -349,127 +615,318 @@ def main_loop():
 						for b in r.bees:
 							if linalg.norm(b.xy - p.xy) < linalg.norm(minbee.xy - p.xy):
 								minbee = b
-						for phys in [p] + r.food + r.bees + r.bullets:
-							phys.erase()
-
-						r.repair(world)
 						for x in r.bees + r.food + [p] + r.bullets:
 							x.draw(world)
 						c.draw()
 						pygame.display.flip()
 
-						while not pygame.event.get(pygame.QUIT):
-							choice = getChoiceUnbounded("Examining nearest bee...what feature?", ["Neural Network", "Movement", "Nothing"])
+						while not time_to_quit: # quit should work fine here
+							choice = getChoiceUnbounded("Examining nearest bee...what feature?", ["Neural Network", "Movement"], allowcancel = True)
 
-							#key = getChoice("Examine bee! What feature?", {pygame.K_t: "Neural Network", pygame.K_e: "Movement from loads of starting points", pygame.K_r: "Nothing"})
-							
 							if choice == "Neural Network":
 								command = minbee.show_brain(world)
 								if command:
 									return
 							
-							if choice == "Movement":
+							elif choice == "Movement":
 								c.draw()
 								messages.say("Loading", down = 1)
 								pygame.display.flip()
-								minbee.visualize_intelligence(world)
+								minbee.visualize_intelligence(world, c)
 								minbee.sample_path(world)
 								c.draw()
 								pygame.display.flip()
 
-
-
-							if choice == "Nothing":
+							elif choice == "cancel":
 								done = 1
 								break
+
+							elif choice == "quit":
+								time_to_quit = True
+				
 				elif choice == "Save bees":
-					messages.colorBackground()
 					beemap = {}
 					beenames = []
-					for b in r.bees:
-						beemap[b.name] = b
-						beenames.append(b.name)
 
-					b = beemap[getChoiceUnbounded("Pick a bee", beenames)]
-					messages.say("Pick a new name for the bee", 0)
-					rename = getString(string = b.name)
-					if rename:
-						b.name = rename
-					h.save_bee(b)
-					h.savedata()
+					for b in r.bees:
+						label = b.firstname + " " + b.name
+						beemap[label] = b
+						beenames.append(label)
+
+					choice = getChoiceUnbounded("Pick a bee", beenames, allowcancel = True)
+
+					if choice == "quit":
+						time_to_quit = True
+
+					elif choice != "cancel":
+						b = beemap[choice]
+						#messages.colorBackground()
+						#messages.say("Pick a new name for the bee", down = 4)
+						rename = b.name
+						'''loop is for error checks'''
+						while not time_to_quit:
+							rename = getString(string = b.name, message = "Pick a new name for the bee")
+
+							# quit
+							if rename == -1:
+								break
+							# cancel
+							elif rename == 0:
+								break
+							elif any(specimen[0] == rename for specimen in h.specimens):
+								messages.colorBackground()
+								messages.say("Name taken. Pick a new name for the bee", down = 4)
+								continue
+							else:
+								b.name = rename
+								break
+						h.save_bee(b)
+						h.savedata()
 
 				elif choice == "Load bees":
 					loadedbeenames = []
 					for b in h.specimens:
 						loadedbeenames.append(b[0])
 
-					loadedbeenames.append("cancel")
+					loadedbeenames.append("done")
+					loadedbeenames = loadedbeenames[-1::-1]
+					i = 0
+					while not time_to_quit:
+						name = getChoiceUnbounded("Loaded " +str(i) +" bees", loadedbeenames, allowcancel = True)
+						if name in ["done", "quit", "cancel"]:
+							break
+						else:
+							i+=1
+							b = h.make_bee(name, r, p)
+							r.bees.append(b)
+							b.flash = 50
+							b.xy[0,0] = p.xy[0,0]
 
-					name = getChoiceUnbounded("Here are the saved bees", loadedbeenames)
+				elif choice == "Delete bees":
+					i = 0
+					message = "Choose a bee to delete"
+					while not time_to_quit:
+						indexfromname = {}
+						loadedbeenames = []
+						for index, b in enumerate(h.specimens):
+							name = b[0]
+							loadedbeenames.append(name)
+							indexfromname[name] = index
+						loadedbeenames.append("done")
+						loadedbeenames = loadedbeenames[-1::-1]
 
-					if name == "cancel":
-						print "cancelled."
-						continue
-
-					else:
-						b = h.make_bee(name, r, p)
-						r.bees.append(b)
-						b.flash = 50
-
-
+						if i:
+							message = "Deleted " + str(i) + " bees"
+						name = getChoiceUnbounded(message, loadedbeenames, allowcancel = True)
+						if name in ["quit", "done", "cancel"]:
+							break
+						else:
+							confirm = getChoiceUnbounded("Delete %s?" % name, ["no", "yes"], allowcancel = True)
+							if confirm != "yes":
+								continue
+							i+=1
+							indextoremove = indexfromname[name]
+							h.specimens = h.specimens[:indextoremove] + h.specimens[(indextoremove + 1):]
 
 				elif choice == "Tweak variables":
+					families = {
+					"Life and Death" : 
+					(ACID, 
+					TOO_SLOW, 
+					HEALTH_LOSS_RATE, 
+					HEALTH_GAIN, 
+					MAXIMUM_BEES, 
+					SLOWNESS_PENALTY,
+					COST_OF_JUMP, 
+					SPEED_PAYOFF,
+					MAX_HEALTH),
 
-					l = [settings.healthlossrate, settings.acid, settings.healthgain]
-					titles = ["Health Loss Rate", "Acid", "Health Gain"]
-					indices = {title:index for index, title in enumerate(titles)}
+					"Mutation":
+					(MUTATION_CHANCES,
+					SCALING_MUTATION,
+					ADDITIVE_MUTATION_RATE,
+					INVERT_MUTATION_RATE,
+					OFFSPRING_MUTATION_RATE,
+					EYE_MUTATION_RANGE,),
+					
+					"Topology / Physics":
+					(STING_REPULSION,
+					AUTOMATIC_EVASION,
+					SWARMING_PEER_PRESSURE,
+					WRAPAROUND_TRACKING,
+					CREATURE_MODE,
+					STICKY_WALLS,),
+					
+					"Random Map Generation":
+					(
+					GENERATE_RANDOM_MAP,
+					RANDOM_TILE_DENSITY,
+					CONGEAL_THOROUGHNESS,
+					RANDOM_MAP_LOW,
+					RANDOM_MAP_HIGH,
+					RANDOM_MAP_RUNS,
+					RANDOM_MAP_RADIUS,),
 
-					'''takes "name: value" string to "name".'''
-					information = {x + ": " + str(l[index]) : x for x, index in indices.iteritems()}
+					"Visual":
+					(JUICINESS,
+					SHOW_EYES,
+					SHOW_NAMES),
 
-					'''this is a bunch of informative labels'''
-					options = [x for x in information]
+					"Family Tree":
+					(TREE_THICKNESS,
+					TREE_V_SPACING,
+					TREE_H_SPACING),
 
-					toChange = getChoiceUnbounded("Pick a variable to modify", options)
+					"Brain Type":
+					(SENSITIVITY_TO_PLAYER,
+					BRAIN_BIAS,
+					MEMORY_STRENGTH,),
+					}
 
-					'''we have the name of the variable we want to change now'''
-					toChange = information[toChange]
+					miscsettings = copy.deepcopy(settings)
+					for family, entries in families.iteritems():
+						for name in entries:
+							if name in miscsettings:
+								del miscsettings[name]
 
-					messages.say("Pick a new value", down = 4)
+					#miscsettings now has everything not represented by the others
+					if miscsettings:
+						families["Misc."] = miscsettings.keys()
 
-					allowed_keys = range(pygame.K_0, pygame.K_9 + 1)
-					allowed_keys += [pygame.K_PERIOD]
+					'''picking kinds of variables'''
+					while not time_to_quit:
+						family = getChoiceUnbounded("What kind of variable?", families.keys(), allowcancel = 1)
+						if family == "cancel":
+							break
 
-					number = float(getString(allowed_keys, str(l[indices[toChange]])))
+						'''picking variable'''
+						while not time_to_quit:
+							'''takes "name: value" string to "name".'''
+							label_to_key = {key + ": " + str(settings[key]) : key for key in families[family]}
 
-					l[indices[toChange]] = number
-
-					settings.healthlossrate, settings.acid, settings.healthgain = l
-
-					for name, index in indices.iteritems():
-						print name + ":", l[index]
+							'''this is a bunch of informative labels'''
+							options = [x for x in sorted(label_to_key.keys())]
 
 
+							toChange = getChoiceUnbounded("Pick a variable to modify", options, allowcancel = 1)
+
+							if toChange == "cancel":
+								break
+							toChange = label_to_key[toChange]
+							if toChange in want_bools:
+								settings[toChange] = not settings[toChange]
+								continue
+							elif toChange in want_ints and toChange in max_val and toChange in min_val:
+								settings[toChange] += 1
+								if settings[toChange] > max_val[toChange]:
+									settings[toChange] = min_val[toChange]
+								continue
+							else:
+								'''we have the name of the variable we want to change now'''
+
+								usedindex = 0
+								for i, entry in enumerate(options):
+									if entry == toChange:
+										usedindex = i
+
+								#messages.colorBackground()
+								#messages.say("Pick a new value", down = 4)
+
+								allowed_keys = range(pygame.K_0, pygame.K_9 + 1)
+								allowed_keys += [pygame.K_PERIOD]
+								allowed_keys += [pygame.K_e]
+								allowed_keys += [pygame.K_MINUS]
+
+								'''loop is for error checking'''
+								while not time_to_quit:
+									#message = messages.smallfont.render("Set new value for '%s'" % toChange, 1, [255, 255, 255])
+									#pygame.display.get_surface().blit(message, (600, 15 * (usedindex + 3)))
+									m = "Set new value for '%s'" % toChange
+									position = pygame.Rect(0,0,290,30)
+									# position.x = 600 #Leaning right
+									position.centerx = graphics.screen_w / 2
+									# position.y = 15 * (usedindex + 4.3) #Leaning up
+									position.centery = graphics.screen_h / 2
+									out = getString(allowed_keys, str(settings[toChange]), textpos = position, message = m)
+									#out = getString(allowed_keys, str(settings[toChange]))
+									
+									# quit
+									if out == -1:
+										break
+
+									# cancel
+									elif out == 0:
+										break
+
+									try:
+										val = 0
+										if "." in out:
+											val = float(out)
+										else:
+											val = int(out)
+
+										problems = problem_with_setting(toChange, val)
+										if problems:
+											messages.colorBackground()
+											messages.say(problems, down = 4)
+											continue
+
+										settings[toChange] = val
+										break
+
+									except:
+										messages.colorBackground()
+										messages.say("Error. Pick a new value", down = 4)
+
+								save_settings()
+
+								#for key, value in settings.iteritems():
+								#	print key + ":", str(value)
+						if family == "quit" or time_to_quit:
+							time_to_quit = True
+							break
 
 				elif choice == "Modify map":
 					messages.colorBackground()
-					messages.say("This is where I would modify the map", 2000)
+					messages.say("This is where I would modify the map", 500)
 
-		#test.record("stuff")
-		#test.add_sticky('drawing', 'erase')
-		# Clean up
+				elif choice == "View Shortcuts":
+					messages.colorBackground()
+					messagecount = 2
+					if settings[SHOW_EYES]:
+						messagecount = messages.say("[r]: Hide eyes", down = messagecount)
+					else:
+						messagecount = messages.say("[r]: Show eyes", down = messagecount)
 
-		for phys in [p] + r.food + r.bees + r.bullets:
-			phys.erase()
+					if r.madness:
+						messagecount = messages.say("[m]: Don't draw trails", down = messagecount)
+					else:
+						messagecount = messages.say("[m]: Draw trails", down = messagecount)
 
-		r.repair(world)
+					if settings[GENERATE_RANDOM_MAP]:
+						messagecount = messages.say("[t]: Don't randomize maps when loading", down = messagecount)
+					else:
+						messagecount = messages.say("[t]: Randomize maps when loading", down = messagecount)
 
-		#test.record("stuff")
-		#test.remove_sticky('drawing', 'erase')
+					if r.stasis:
+						messagecount = messages.say("[a]: Resume deaths and births", down = messagecount)
+					else:
+						messagecount = messages.say("[a]: Pause deaths and births", down = messagecount)
 
-		
+					messagecount = messages.say("[e]: Examine a random bee", down = messagecount)
 
-		#test.add_sticky('update')
+					messagecount = messages.say("Click anywhere to continue", down = messagecount)
+					waitForEnter(hidemessage = 1)
+
+			if time_to_quit:
+				print "Saving game very rapidly, whee"
+				game_progress.save_game(r)
+				return
+
+			screen.fill(graphics.background)
+			dt = clock.tick(400) # This is to trick the computer into thinking no time has passed
+			dt = 0
+
 
 		mod = 2
 		#each bee updates once every mod frames
@@ -478,81 +935,86 @@ def main_loop():
 		for i, bee in enumerate(r.bees):
 			bee.slow = (i + framecount) % mod
 
-
-		for phys in [p] + r.food + r.bees + r.bullets:
+		for phys in [p] + r.food + r.bullets:
 			phys.update(dt, key_states, key_presses)
 
+		updatefamilytree = 0
 
+		for b in r.bees:
+			b.update(dt, key_states, key_presses)
+			if b.request_family_tree_update:
+				updatefamilytree = 1
+				b.request_family_tree_update = 0
 
+		
+		if not framecount % 3:
+			myspeciesplot.update(r.bees + r.deadbees)
+			myspeciesplot.draw(screen, (840,0))
+
+			for b in r.deadbees:
+				if b.dead == 2:
+					r.deadbees.remove(b)
+
+		#if updatefamilytree:
+		#	myfamilytree.update(r.bees)
+		#	myfamilytree.draw(screen, (840, 400))
 
 		r.update() # Necessarily comes afterwards so that the bees can see the player
-
-		#test.record("room")
-
-		#test.remove_sticky('update')
-
+		if r.signal_new_tree:
+			r.signal_new_tree = 0
+			myfamilytree.depth += 2*settings[TREE_V_SPACING]
 		c.follow_player(dt) # Here so that room knows what to draw
 		c.updatesight()
 
-		#test.record("moving the camera")
 		
 		test.draw(world, r)
 
-		#test.add_sticky('drawing')
 		for x in r.bees + r.food + [p] + r.bullets:
 			x.draw(world)
-
-		'''if r.bees:
-									b = r.bees[0]
-									ixy = b.xy.astype(int)
-									for x in range(-1, 2, 1):
-										if x and 0 < ixy[0,0] + 41 * -x < graphics.world_w:
-											continue
-										for y in range(-1, 2, 1):
-											if y and 0 < ixy[0,1] + 41 * -y < graphics.world_h:
-												continue
-											x0 = ixy[0,0] + x * graphics.world_w
-											y0 = ixy[0,1] + y * graphics.world_h
-											pygame.draw.circle(world, [255, 255, 255], (x0, y0), 40, 1)'''
-
-
-		#dirtiness += 1
-		#test.remove_sticky('drawing')
-		
-		
-
 		
 		# Time
 		dt = clock.tick(400)
-		#dt = min(dt, 100)
-		#print int(clock.get_fps()),
+		dt = min(dt, 45) # Make it seem like a slowed down version of 22fps if necessary
+		#print dt, "this is dt"
 
-		#test.record("extras")
-
-		#c.follow_player(dt)
 		c.draw()
-		#test.record('drawing', "camera")
 
-		ta = "Time: " + str(pygame.time.get_ticks() / 1000)
+		seconds = pygame.time.get_ticks() / 1000
+
+
+		ta = "Time: " + str(seconds)
 		tb = " | current bees: " + str(len(r.bees))
+		tbb = " | total dead bees " + str(len(r.deadbees))
 		tc = " |" + str(int(clock.get_fps()))+"fps"
 
-		t.permanent_text = "[o]ptions | " +  ta + tb + tc
-		t.data.append(clock.get_fps())
+		t.permanent_text = [
+		ta + tb + tbb + tc,]
+
+		if settings[SHOW_HELP]:
+			t.permanent_text += [
+			"click anywhere for options",
+			"plotted on right: Recent lifetimes, max is %s" % (max(t.data) if t.data else "not defined"),
+			"[a]: %s birth and deaths" % ("resume" if r.stasis else "pause"),
+			"[g]: generate bees",
+			"[e]: visualize paths of a random bee",
+			"[r]: %s eyes" % ("hide" if settings[SHOW_EYES] else "show"),
+			"[n]: %s names" % ("hide" if settings[SHOW_NAMES] else "show"),
+			"[m]: %s visual madness" % ("decrease" if r.madness == 2 else "increase"),
+			"[SPACE]: teleport to a random position",
+			"[t]: turn %s random map generation" % ("off" if settings[GENERATE_RANDOM_MAP] else "on"),
+			]
+
+		t.permanent_text.append("[h]: %s help" % ("hide" if settings[SHOW_HELP] else "show"))
+
 		t.draw(screen)
 		pygame.display.flip()
-		
-		#test.record('drawing', "topbar")
-
 
 		for phys in r.bees + r.food + [p]:
 			phys.visible = c.can_see(phys)
 
-		#test.record("visibility")
-
 		test.summarizetimings(test.segs, test.segdescriptors)
 		pygame.event.pump()
-		#end of while loop
+
 
 def main():
 	initialization()

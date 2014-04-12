@@ -1,0 +1,128 @@
+(dp0
+S'Slowness Penalty'
+p1
+I1
+sS'Mapgen Neighborhood radius'
+p2
+I1
+sS'Automatic Bee Evasion'
+p3
+I0
+sS'Health Loss Rate'
+p4
+F0.0001
+sS'Tree Color Variation'
+p5
+I40
+sS'Mapgen iterations'
+p6
+I20
+sS'Health Gain'
+p7
+F0.1
+sS'Invert Mutation Rate'
+p8
+F0.0
+sS'Maximum Health'
+p9
+I1
+sS'Additive Mutation Rate'
+p10
+F0.05
+sS'Gravity'
+p11
+F0.0006
+sS'Show Help'
+p12
+I00
+sS'Mutation Chances'
+p13
+I1
+sS'Tile Maximum Neighbors'
+p14
+I6000
+sS'Tree Horizontal Spacing'
+p15
+I1
+sS'Creature Mode'
+p16
+I0
+sS'Scaling Mutation Rate'
+p17
+I1
+sS'Random Tile Density'
+p18
+F0.4
+sS'Tree Vertical Spacing'
+p19
+I1
+sS'Brain Bias'
+p20
+I1
+sS'Show Eyes'
+p21
+I00
+sS'Tree Thickness'
+p22
+I1
+sS'Eye Mutation Range'
+p23
+I5
+sS'Wall Acid'
+p24
+F0.01
+sS'Cost of Jumping'
+p25
+I0
+sS"'Too Slow' Threshold"
+p26
+F0.1
+sS'Sticky Walls'
+p27
+I0
+sS'Swarming Peer Pressure'
+p28
+I0
+sS'Sting Repulsion'
+p29
+I0
+sS'Overpopulation Limit'
+p30
+I40
+sS'Generate Random Map'
+p31
+I0
+sS'Congeal Thoroughness'
+p32
+F0.4
+sS'Wraparound Tracking'
+p33
+I01
+sS'Species Visualization Style'
+p34
+I1
+sS'Offspring Mutation Rate'
+p35
+I1
+sS'Sensitivity To Player Position'
+p36
+I1
+sS'Juiciness'
+p37
+I0
+sS'Show Names'
+p38
+I00
+sS'Memory Strength'
+p39
+I0
+sS'Tile Minimum Neighbors'
+p40
+I5
+sS'Speed Payoff'
+p41
+I1
+sS'Congeal CONGEAL_THOROUGHNESS'
+p42
+I1
+s.
