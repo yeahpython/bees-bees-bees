@@ -88,7 +88,7 @@ p29
 I0
 sS'Overpopulation Limit'
 p30
-I40
+I100
 sS'Generate Random Map'
 p31
 I0
