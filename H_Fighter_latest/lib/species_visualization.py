@@ -94,9 +94,9 @@ class SpeciesPlot(object):
 
 		inputs = [0.0,0.0] + [1 - distance for distance in infoz] + [1.0]
 
-		up, down, left, right = bee.brain.compute(inputs)
+		up, down, left, right = bee.brain.compute(inputs, use_memory = 0)
 		if settings[SPECIES_STYLE] == 1:
-			return right - left, ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2 - 1
+			return right - left, 1 - ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2
 		elif settings[SPECIES_STYLE] == 2:
 			return ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2 - 1, down - up
 		else:
@@ -109,7 +109,12 @@ class SpeciesPlot(object):
 		#x,y = int(x), int(y)
 		a, b = representation
 		#a, b = log_skew(a), log_skew(b)
-		a, b = (self.w / 2.4) * a, (self.h / 2.4) * b
+		if settings[SPECIES_STYLE] == 3:
+			l = (a**2 + b**2)**0.5 + 0.01
+			a, b = a / l, b / l
+			a, b = 40 * a, 40 * b
+		else:
+			a, b = (self.w / 2.4) * a, (self.h / 2.4) * b
 		a += self.w / 2
 		b += self.h / 2
 		a = int(a)
@@ -143,29 +148,39 @@ class SpeciesPlot(object):
 		for b in bees:
 			b.familytreeuse = 0
 
+
+		maxrad = 10
 		# Drawing everything
 		for b in bees:
 			if b.dead == 2:
 				continue
+			thickness = ((len(b.ancestry) - self.min_ancestry) * maxrad) / (self.max_ancestry - self.min_ancestry)
+
 			b.representation = self.get_representation(b)
 			beepos = self.get_location(b.representation)
 			if b.parent:
 				parent = self.get_location(self.get_representation(b.parent))
 				b.parent.familytreeuse += 1
 				origin = self.get_location((0.0,0.0))
-				pygame.draw.line(self.plot, [0,0,0], beepos, parent, 5)
-				pygame.draw.line(self.plot, b.treecolor, beepos, parent, 1)
-				#pygame.draw.line(self.plot, [50, 50, 50], beepos, origin, 1)
+				if settings[SPECIES_STYLE] == 3:
+					#pygame.draw.line(self.plot, [0,0,0], beepos, parent, thickness + 5)
+					#pygame.draw.line(self.plot, [50, 50, 50], beepos, parent, 1)
+					pygame.draw.line(self.plot, b.treecolor, beepos, origin, 3)
+				else:
+					#pygame.draw.line(self.plot, [0,0,0], beepos, parent, thickness + 5)
+					pygame.draw.line(self.plot, b.treecolor, beepos, parent, 1)
+					#pygame.draw.line(self.plot, [50, 50, 50], beepos, origin, 1)
 			else:
 				b.parent_species_representation = b.representation
 
-			maxrad = 4
-			if b.dead:
-				pygame.draw.circle(self.plot, b.treecolor, beepos, ((len(b.ancestry) - self.min_ancestry) * maxrad) / (self.max_ancestry - self.min_ancestry) + 1, 1)
-				pygame.draw.circle(self.plot, [255,0,0], beepos, 10, 1)
-			else:
-				pygame.draw.circle(self.plot, b.treecolor, beepos, ((len(b.ancestry) - self.min_ancestry) * maxrad) / (self.max_ancestry - self.min_ancestry))
+			if settings[SPECIES_STYLE] != 3:
+				if b.dead:
+					pygame.draw.circle(self.plot, b.treecolor, beepos, thickness + 1, 1)
+					#pygame.draw.circle(self.plot, [255,0,0], beepos, 10, 1)
+				else:
+					pygame.draw.circle(self.plot, b.treecolor, beepos, thickness)
 
+		
 		# Substituting boring chains
 		for b in bees:
 			if b.parent and b.parent.parent and b.parent.dead and (b.parent.familytreeuse == 1):
@@ -175,6 +190,7 @@ class SpeciesPlot(object):
 		for b in bees:
 			if b.parent and b.parent.dead == 2:
 				b.parent = b.parent.parent
+		
 
 		ancestries = sorted([b.ancestry for b in bees])
 		ranks = { ancestry:i for i,ancestry in enumerate(ancestries)}
@@ -190,8 +206,12 @@ class SpeciesPlot(object):
 				if not is_ancestor(b.ancestry, potential_descendant):
 					#Then this bee has no living descendents. Mark it for removal.
 					b.dead = 2
+		
 
 	def draw(self, surface, position = (0,0)):
-		surface.blit(self.plot, position)
+		if settings[SPECIES_STYLE] == 3:
+			surface.blit(self.plot, position, special_flags=pygame.BLEND_ADD)
+		else:
+			surface.blit(self.plot, position)
 
 

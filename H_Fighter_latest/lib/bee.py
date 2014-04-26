@@ -134,7 +134,7 @@ class Bee(physical.Physical):
 		self.name = random_surname()
 		self.firstname = random_name()
 		self.children = 0
-		self.ancestry = ()
+		self.ancestry = (random.randrange(0, 1000000),)
 		self.score = 0
 		self.outputs = [0.5, 0.5, 0.5, 0.5]
 		self.player = "lol"
@@ -245,8 +245,8 @@ class Bee(physical.Physical):
 		'''
 		steps = 4
 		# 24 * 16 * 4 = 1536
-		dt = 80
-		spacing = 30.0
+		dt = 60
+		spacing = 50.0
 
 		simradius = min(graphics.screen_w, graphics.screen_h)/2
 
@@ -294,9 +294,11 @@ class Bee(physical.Physical):
 					if abs(start[0,1] - end[0,1]) < min(graphics.world_h/2, 200):
 						#color = (50 + x * (200 / steps),x * (100 / steps),0)
 						color = self.color
+						#w = 1
+						#w = int((linalg.norm(self.vxy) * 10 + 1) * (steps-x))
+						#w =  steps-x
+						w = x + 1
 						w = 1
-						w = int((linalg.norm(self.vxy) * 10 + 1) * (steps-x))
-						w =  steps-x
 						pygame.draw.line(surface, color, (start[0,0], start[0,1]), (end[0,0], end[0,1]), w)
 						#pygame.draw.line(surface, [0,0,0], (start[0,0], start[0,1]), (end[0,0], end[0,1]), 2)
 				if not x:
@@ -439,19 +441,32 @@ class Bee(physical.Physical):
 
 			disp_to_p = self.player.xy - self.xy
 
+
 			if settings[WRAPAROUND_TRACKING]:
 				disp_to_p += center
 				disp_to_p[0,0] %= graphics.world_w
 				disp_to_p[0,1] %= graphics.world_h
 				disp_to_p -= center
 
-			tweaked_disp = 0.001 * disp_to_p * settings[SENSITIVITY_TO_PLAYER]
+			player_sight_range = 50
+			disp_to_p /= player_sight_range
+			dist = linalg.norm(disp_to_p)
+
+			sharpness = 1
+			radius = 2
+
+			if dist > 0:
+				disp_to_p *= settings[SENSITIVITY_TO_PLAYER] * (1 / (1 + 2 ** (sharpness *(dist - radius)) )) / dist
+
 			#tweaked_disp *= self.sensitivity
 
-			dispx, dispy = tuple(array(tweaked_disp)[0])
+			dispx, dispy = tuple(array(disp_to_p)[0])
 			#BE REALLY CAREFUL WHEN DIVIDING THIS BY STUFF THEY ARE INTEGERS
 
 			disps = [dispx, dispy]
+
+
+
 			dvx = self.player.vxy[0,0] - self.vxy[0,0]
 			dvy = self.player.vxy[0,1] - self.vxy[0,1]
 			
@@ -625,8 +640,8 @@ class Bee(physical.Physical):
 			self.health = settings[MAX_HEALTH]
 
 	def considergivingbirth(self):
-		if len(self.room.bees) < settings[MAXIMUM_BEES] and self.health > 0.9 and random.random() > 0.3:
-			self.health -= 0.0
+		if len(self.room.bees) < settings[MAXIMUM_BEES] and self.health > 0.9:
+			self.health *= 0.5
 			self.children += 1
 			self.randomize_color()
 			newbee = Bee(self.room, copy.deepcopy(self.brain), self.color, self.radius, eyepoints = self.eyepoints)
@@ -638,7 +653,7 @@ class Bee(physical.Physical):
 			if random.random() < settings[OFFSPRING_MUTATION_RATE]:
 				newbee.mutate()
 			newbee.brain.randomizenodes()
-			newbee.health = 0.8
+			newbee.health = self.health + 0.0
 			newbee.place(self.xy + matrix([0,0]))#mimic position
 			#newbee.randomize_position(0.3)#randomize position
 			newbee.findplayer(self.player)
@@ -754,9 +769,14 @@ class Bee(physical.Physical):
 				elif self.madness == 3:
 					'''super mad'''
 					w = int(linalg.norm(self.vxy) * 100 + 1)
-					pygame.draw.line(self.room.background, [255,20,20], array(self.xy)[0], array(self.prevpos)[0], w + 10)
+					#pygame.draw.line(self.room.background, [255,20,20], array(self.xy)[0], array(self.prevpos)[0], w + 10)
 					pygame.draw.line(self.room.background, self.color, array(self.xy)[0], array(self.prevpos)[0], w)
 					#pygame.draw.line(self.room.background, [0,0,0], array(self.xy)[0], array(self.prevpos)[0], 1)
+				elif self.madness == 4:
+					'''lines with shadows'''
+					w = 10
+					pygame.draw.line(self.room.background, [0,0,0], array(self.xy)[0], array(self.prevpos)[0], w)
+					pygame.draw.line(self.room.background, self.color, array(self.xy)[0], array(self.prevpos)[0], 1)
 
 		for x,y in utils.body_copies(self.xy, self.radius):
 			px = ixy[0,0] + x*graphics.world_w
@@ -785,16 +805,19 @@ class Bee(physical.Physical):
 
 
 			if self.flash:
-				pygame.draw.circle(surface, [255, 255, 255], (px, py), self.flash + 1)
+				pygame.draw.circle(surface, [255, 255, 255], (px, py), self.flash + 1, 1)
 				self.flash -= 1
 
 			
 			regularcolor = self.color
 			r2 = int(self.radius * 0.6 * self.health)
-			if self.vxy[0,0]>0:
-				pygame.draw.line(surface, regularcolor, (px-r2,py-r2), (px+r2, py+r2), 1)
+			if settings[BEE_STYLE] == 1:
+				if self.vxy[0,0]>0:
+					pygame.draw.line(surface, regularcolor, (px-r2,py-r2), (px+r2, py+r2), 1)
+				else:
+					pygame.draw.line(surface, regularcolor, (px+r2,py-r2), (px-r2, py+r2), 1)
 			else:
-				pygame.draw.line(surface, regularcolor, (px+r2,py-r2), (px-r2, py+r2), 1)
+				pygame.draw.circle(surface, regularcolor, (px, py), 1 + int(self.radius*self.health))
 
 			if settings[SHOW_EYES]:
 				for distance, (x,y) in zip(self.wallproximities, self.sharedeyes):

@@ -31,8 +31,8 @@ TIME_INITIALIZATION = 0
 
 #increase this to make a very distint and impermeable floor / wall
 forcewall = 0
-forcefloor = 0
-noceiling = 0
+forcefloor = 1
+noceiling = 1
 
 horizontalbias = 0
 

@@ -536,8 +536,8 @@ def main_loop():
 
 		if key_ups[pygame.K_m]:
 			print framecount
-			r.madness +=1
-			r.madness %=4
+			r.madness += 1
+			r.madness %= 5
 			for bee in r.bees:
 				bee.madness = r.madness
 
@@ -603,7 +603,7 @@ def main_loop():
 				elif choice == "Extinction":
 					if getChoiceUnbounded("Kill all bees?", ["no", "yes"], allowcancel = 1) == "yes":
 						for b in r.bees:
-							b.health = -0
+							b.health = -20
 						for b in r.bees + r.deadbees:
 							b.dead = 2
 						t.data = []
@@ -947,17 +947,27 @@ def main_loop():
 				b.request_family_tree_update = 0
 
 		
-		if not framecount % 3:
-			myspeciesplot.update(r.bees + r.deadbees)
-			myspeciesplot.draw(screen, (840,0))
+		if settings[SPECIES_STYLE] == 3:
+			if not framecount % 3:
+				myspeciesplot.update(r.bees + r.deadbees)
+				for b in r.deadbees:
+					if b.dead == 2:
+						r.deadbees.remove(b)
+			myspeciesplot.draw(world, (int(p.xy[0,0]) - myspeciesplot.w/2, int(p.xy[0,1]) - myspeciesplot.h/2))
+		
+		else:
+			if not framecount % 3:
+				myspeciesplot.update(r.bees + r.deadbees)
+				myspeciesplot.draw(screen, (840,0))
 
-			for b in r.deadbees:
-				if b.dead == 2:
-					r.deadbees.remove(b)
 
-		#if updatefamilytree:
-		#	myfamilytree.update(r.bees)
-		#	myfamilytree.draw(screen, (840, 400))
+				for b in r.deadbees:
+					if b.dead == 2:
+						r.deadbees.remove(b)
+
+		'''if updatefamilytree:
+			myfamilytree.update(r.bees)
+			myfamilytree.draw(screen, (840, 0))'''
 
 		r.update() # Necessarily comes afterwards so that the bees can see the player
 		if r.signal_new_tree:
@@ -981,13 +991,23 @@ def main_loop():
 
 		seconds = pygame.time.get_ticks() / 1000
 
+		t0 = "Plotted on right: "
+
+		if settings[SPECIES_STYLE] == 1:
+			t0 += "x: horizontal movement, y: generation"
+		elif settings[SPECIES_STYLE] == 2:
+			t0 += "x: generation, y: vertical movement"
+		else:
+			t0 += "x: horizontal movement, y: vertical movement"
+
+		t.permanent_text = [t0]
 
 		ta = "Time: " + str(seconds)
 		tb = " | current bees: " + str(len(r.bees))
 		tbb = " | total dead bees " + str(len(r.deadbees))
 		tc = " |" + str(int(clock.get_fps()))+"fps"
 
-		t.permanent_text = [
+		t.permanent_text += [
 		ta + tb + tbb + tc,]
 
 		if settings[SHOW_HELP]:

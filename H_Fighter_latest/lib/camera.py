@@ -43,8 +43,27 @@ class Camera(object):
 		if not self.v_bounded:
 			disp[0,1] %= graphics.world_h
 		disp -= center
+
+		if self.v_bounded:
+			if graphics.disp_h > graphics.world_h:
+				self.xy[0,1] = graphics.world_h/2# - graphics.world_h/2
+			else:
+				if self.xy[0, 1] <= graphics.disp_h/2:
+					self.xy[0,1] = graphics.disp_h/2
+				if self.xy[0,1] + graphics.disp_h/2 >= graphics.world_h:
+					self.xy[0,1] = graphics.world_h - graphics.disp_h/2
+
+		if self.h_bounded:
+			if graphics.disp_w > graphics.world_w:
+				self.xy[0,0] = graphics.world_w/2# - graphics.world_w/2
+			else:
+				if self.xy[0,0] <= graphics.disp_w/2:
+					self.xy[0,0] = graphics.disp_w/2
+				if self.xy[0,0] + graphics.disp_w/2 >= graphics.world_w:
+					self.xy[0,0] = graphics.world_w - graphics.disp_w/2
+
 		self.vxy += disp * 0.00005 * dt
-		print self.vxy
+		#print self.vxy
 		self.vxy *= 0.5
 		self.xy += self.vxy * dt
 

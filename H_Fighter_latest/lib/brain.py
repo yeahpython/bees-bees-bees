@@ -48,11 +48,13 @@ specialdrawinglines = {
 include_cycles = True	
 
 def afunc(x):
+	return x / 10
 	#return x > 0
-	return 1/(1+math.e**(-0.5*x))
+	#return 1/(1+math.e**(-x))
 
 def welp(x):
 	return 2/(1+math.e**-x) - 1
+
 
 class Brain(object):
 	"A neural network! You can make it, randomize it, or make it process stuff!"
@@ -145,14 +147,15 @@ class Brain(object):
 
 		return maximum / 2000
 
-	def compute(self, inp):
+	def compute(self, inp, use_memory = 1):
 		"Take the input nodes and work out what happens at the output"
 		settings[BRAIN_BIAS]
 		self.nodes[0] = matrix(inp + [settings[BRAIN_BIAS]])
 		for i, edges in enumerate(self._all_edges):
 			if include_cycles:
 				'''combine current and previous layer'''
-				g = append( settings[MEMORY_STRENGTH] * self.nodes[i+1], self.nodes[i], axis = 1)
+				g = append( settings[MEMORY_STRENGTH] * use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
+				#g = append( use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
 				self.nodes[i + 1] = g*edges
 			else:
 				g = self.nodes[i]

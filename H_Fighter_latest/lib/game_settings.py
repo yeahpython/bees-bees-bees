@@ -55,6 +55,7 @@ TREE_THICKNESS = "Tree Thickness"
 TREE_COLOR_VARIATION = "Tree Color Variation"
 
 SPECIES_STYLE = "Species Visualization Style"
+BEE_STYLE = "Bee Style"
 
 # Misc.
 SHOW_HELP = "Show Help"
@@ -101,6 +102,7 @@ TREE_H_SPACING : 5,
 TREE_THICKNESS : 1,
 TREE_COLOR_VARIATION: 100,
 SPECIES_STYLE: 1,
+BEE_STYLE: 2,
 }
 
 want_bools = [
@@ -124,6 +126,7 @@ TREE_THICKNESS,
 TREE_H_SPACING,
 TREE_V_SPACING,
 SPECIES_STYLE,
+BEE_STYLE,
 ]
 
 max_val = {
@@ -138,6 +141,7 @@ MEMORY_STRENGTH: 1,
 RANDOM_TILE_DENSITY: 1,
 CONGEAL_THOROUGHNESS: 1,
 SPECIES_STYLE: 3,
+BEE_STYLE: 2,
 }
 
 min_val = {
@@ -156,6 +160,7 @@ TREE_V_SPACING: 1,
 TREE_H_SPACING: 1,
 SPECIES_STYLE: 1,
 MAXIMUM_BEES: 1,
+BEE_STYLE: 1,
 }
 
 def problem_with_setting(key, value):

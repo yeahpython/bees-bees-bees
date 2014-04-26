@@ -1,128 +1,131 @@
 (dp0
-S'Slowness Penalty'
+S'Mapgen Neighborhood radius'
 p1
 I1
-sS'Mapgen Neighborhood radius'
-p2
-I1
-sS'Automatic Bee Evasion'
-p3
-I0
 sS'Health Loss Rate'
-p4
+p2
 F0.0001
-sS'Tree Color Variation'
-p5
-I40
-sS'Mapgen iterations'
-p6
-I20
-sS'Health Gain'
-p7
-F0.1
-sS'Invert Mutation Rate'
-p8
-F0.0
-sS'Maximum Health'
-p9
-I1
-sS'Additive Mutation Rate'
-p10
-F0.05
-sS'Gravity'
-p11
-F0.0006
+sS'Wraparound Tracking'
+p3
+I01
 sS'Show Help'
-p12
+p4
 I00
-sS'Mutation Chances'
-p13
+sS'Scaling Mutation Rate'
+p5
+I0
+sS'Tree Thickness'
+p6
 I1
-sS'Tile Maximum Neighbors'
+sS'Random Tile Density'
+p7
+F0.25
+sS'Sting Repulsion'
+p8
+I200
+sS'Overpopulation Limit'
+p9
+I60
+sS'Species Visualization Style'
+p10
+I3
+sS'Memory Strength'
+p11
+I1
+sS'Mapgen iterations'
+p12
+I20
+sS'Invert Mutation Rate'
+p13
+I0
+sS'Additive Mutation Rate'
 p14
-I6000
-sS'Tree Horizontal Spacing'
+I1
+sS'Bee Style'
 p15
 I1
 sS'Creature Mode'
 p16
 I0
-sS'Scaling Mutation Rate'
+sS'Show Names'
 p17
-I1
-sS'Random Tile Density'
-p18
-F0.4
-sS'Tree Vertical Spacing'
-p19
-I1
-sS'Brain Bias'
-p20
-I1
-sS'Show Eyes'
-p21
 I00
-sS'Tree Thickness'
-p22
+sS'Congeal CONGEAL_THOROUGHNESS'
+p18
 I1
 sS'Eye Mutation Range'
+p19
+I5
+sS'Sticky Walls'
+p20
+I0
+sS'Juiciness'
+p21
+I0
+sS'Slowness Penalty'
+p22
+F0.3
+sS'Tile Minimum Neighbors'
 p23
 I5
-sS'Wall Acid'
+sS'Health Gain'
 p24
-F0.01
-sS'Cost of Jumping'
+F0.3
+sS'Gravity'
 p25
-I0
-sS"'Too Slow' Threshold"
+F0.0006
+sS'Maximum Health'
 p26
-F0.1
-sS'Sticky Walls'
+I1
+sS'Mutation Chances'
 p27
-I0
-sS'Swarming Peer Pressure'
+I1
+sS'Congeal Thoroughness'
 p28
-I0
-sS'Sting Repulsion'
+I1
+sS'Generate Random Map'
 p29
 I0
-sS'Overpopulation Limit'
+sS'Tree Vertical Spacing'
 p30
-I100
-sS'Generate Random Map'
-p31
-I0
-sS'Congeal Thoroughness'
-p32
-F0.4
-sS'Wraparound Tracking'
-p33
-I01
-sS'Species Visualization Style'
-p34
 I1
 sS'Offspring Mutation Rate'
+p31
+I1
+sS'Brain Bias'
+p32
+F0.01
+sS'Automatic Bee Evasion'
+p33
+I0
+sS'Sensitivity To Player Position'
+p34
+I2
+sS'Tree Horizontal Spacing'
 p35
 I1
-sS'Sensitivity To Player Position'
+sS'Cost of Jumping'
 p36
-I1
-sS'Juiciness'
+I0
+sS'Show Eyes'
 p37
-I0
-sS'Show Names'
-p38
 I00
-sS'Memory Strength'
+sS'Wall Acid'
+p38
+F0.3
+sS"'Too Slow' Threshold"
 p39
-I0
-sS'Tile Minimum Neighbors'
+F0.1
+sS'Swarming Peer Pressure'
 p40
-I5
-sS'Speed Payoff'
+I0
+sS'Tree Color Variation'
 p41
-I1
-sS'Congeal CONGEAL_THOROUGHNESS'
+I30
+sS'Tile Maximum Neighbors'
 p42
+I6000
+sS'Speed Payoff'
+p43
 I1
 s.
