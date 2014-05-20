@@ -305,6 +305,8 @@ def randomlymodify(lines):
 	roundedges(lines)
 	if VISUALIZE_MAP_LOAD:
 		pygame.display.flip()
+	for s in lines:
+		print s
 
 def globalize_dimensions(r, c):
 	global rows, cols
@@ -376,6 +378,7 @@ class Room(object):
 		self.camera = 0
 		self.madness = 0
 		self.stasis = False
+		self.roomnumber = 0
 		self.signal_new_tree = 0
 
 		nextmessage = messages.say("reducing sides", 0, down = nextmessage)

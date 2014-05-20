@@ -166,10 +166,8 @@ class Player(physical.Physical):
 		if self.feetSupported:
 			if key_states[pygame.K_LEFT]:
 				if self.normals:
-					print "I have normals!"
 					self.vxy += groundacc*self.normals[0]*matrix([[0, -1],[1, 0]])*dt# Left # used to be
 				else:
-					print "I don't have normals!"
 					self.vxy += groundacc*matrix([-1, 0])*dt
 			elif key_states[pygame.K_RIGHT]:
 				if self.normals:

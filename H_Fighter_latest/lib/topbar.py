@@ -13,7 +13,6 @@ class TopBar(object):
 	graph of lifespans'''
 
 	def __init__(self, screen):
-		self.s = screen
 		self.permanent_text = ["evade"]
 		self.flashtext = "start!"
 		self.time_to_clear = 100

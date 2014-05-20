@@ -1,3 +1,5 @@
+
+
 class Palette(object):
 	def __init__(self):
 		self.max = [1.0, 1.0, 1.0, 1.0]
@@ -6,9 +8,9 @@ class Palette(object):
 	
 	def renew_coloring_rule(self, bees, speed = 0.1):
 		x = zip(*[b.outputs for b in bees])
-		newmax = [max(x[i]) for i in range(4)]
-		newmin = [min(x[i]) for i in range(4)]
-		for i in range(4):
+		newmax = [max(x[i]) for i in range(2)]
+		newmin = [min(x[i]) for i in range(2)]
+		for i in range(2):
 			self.max[i] *= (1-speed)
 			self.max[i] += speed * newmax[i]
 			self.min[i] *= (1-speed)
@@ -17,9 +19,10 @@ class Palette(object):
 
 	def get_color(self, b):
 		outputs = b.outputs[:]
-		for i in range(4):
+		for i in range(2):
 			outputs[i] = (outputs[i] - self.min[i]) * self.scaling[i]
-		color = [outputs[1], outputs[0], (outputs[2] - outputs[3] + 1) / 2]
+		color = [outputs[0], outputs[1], -0.5 * outputs[0] - 0.866 * outputs[1]]
+		color = [(i + 1) / 2 for i in color]
 		color = [min(i, 1) for i in color]
 		color = [max(i, 0) for i in color]
 		color = [int(50 + i*205) for i in color]

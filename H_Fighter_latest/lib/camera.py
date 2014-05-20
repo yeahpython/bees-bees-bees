@@ -46,7 +46,7 @@ class Camera(object):
 
 		if self.v_bounded:
 			if graphics.disp_h > graphics.world_h:
-				self.xy[0,1] = graphics.world_h/2# - graphics.world_h/2
+				self.xy[0,1] = graphics.world_h - graphics.disp_h/2
 			else:
 				if self.xy[0, 1] <= graphics.disp_h/2:
 					self.xy[0,1] = graphics.disp_h/2
@@ -55,7 +55,7 @@ class Camera(object):
 
 		if self.h_bounded:
 			if graphics.disp_w > graphics.world_w:
-				self.xy[0,0] = graphics.world_w/2# - graphics.world_w/2
+				self.xy[0,0] = graphics.world_w - graphics.disp_w/2
 			else:
 				if self.xy[0,0] <= graphics.disp_w/2:
 					self.xy[0,0] = graphics.disp_w/2

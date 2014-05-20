@@ -48,7 +48,9 @@ def preparelevel(screen, level):
 	elif level == "Random 35 x 35":
 		return prepareRandomLevel(screen, 35, 35)
 	elif level == "Random 60 x 60":
-		return prepareRandomLevel(screen, 60, 60) 
+		return prepareRandomLevel(screen, 60, 60)
+	elif level == "Random 60 x 25":
+		return prepareRandomLevel(screen, 60, 25)
 	else:
 		graphics.load(os.path.join("data", "rooms", level))
 		world = pygame.Surface((graphics.world_w, graphics.world_h))
@@ -417,7 +419,6 @@ def main_loop():
 		messages.say("Loading saved game", down = 4)
 		pygame.display.flip()
 		world = pygame.Surface((graphics.world_w, graphics.world_h))
-		r.topbar.s = screen
 		t = r.topbar
 		loadedSavedGame = 1
 	else:
@@ -553,14 +554,14 @@ def main_loop():
 		if clicks.mouseups[0]:
 			for b in r.bees:
 				b.skipupdate = True
-			options = ["Move to another map", "Random 35 x 35", "Random 60 x 60", "Examine bee", "Save bees", "Extinction", "Load bees", "Delete bees", "Tweak variables", "Modify map", "View Shortcuts", "quit"]
+			options = ["Move to another map", "Random 60 x 25", "Random 35 x 35", "Random 60 x 60", "Examine bee", "Save bees", "Extinction", "Load bees", "Delete bees", "Tweak variables", "Modify map", "View Shortcuts", "quit"]
 			choice = getChoiceUnbounded("select option", options, allowcancel = 1)
 
 			if choice != "cancel":
 				if choice == "quit":
 					time_to_quit = True
 
-				elif choice in ["Move to another map", "Random 35 x 35", "Random 60 x 60"]:
+				elif choice in ["Move to another map", "Random 60 x 25", "Random 35 x 35", "Random 60 x 60"]:
 					level = choice
 					if choice == "Move to another map":
 						level = enteredlevel()
@@ -580,11 +581,13 @@ def main_loop():
 						test.segs = [] #a list of times
 						test.segdescriptors = [] # a list of descriptors or hashtags to say what's happening during the time
 						test.stickylabels = []
+						r.topbar = 0
 						world, t, r2 = preparelevel(screen, level)
+						p.topbar = 0
 						p = player.Player(r2)
-
+						r2.roomnumber = r.roomnumber + 1
 						r2.bees = r.bees
-						r2.deadbees = r2.deadbees
+						r2.deadbees = r.deadbees
 
 						r = r2
 						h.savedata()
@@ -593,12 +596,15 @@ def main_loop():
 						c = camera.Camera(p, world, screen, r)
 						c.xy = 1 * p.xy
 						r.h = h
-						for b in r.bees:
+
+						for b in r.bees + r.deadbees:
 							b.lastnonwall = matrix([[-1.0, 0.0]])
 							b.madness = 0
 							b.room = r
 							b.player = p
 							b.randomize_position()
+
+
 
 				elif choice == "Extinction":
 					if getChoiceUnbounded("Kill all bees?", ["no", "yes"], allowcancel = 1) == "yes":
@@ -755,7 +761,8 @@ def main_loop():
 					SWARMING_PEER_PRESSURE,
 					WRAPAROUND_TRACKING,
 					CREATURE_MODE,
-					STICKY_WALLS,),
+					STICKY_WALLS,
+					GRAVITY),
 					
 					"Random Map Generation":
 					(
@@ -770,17 +777,21 @@ def main_loop():
 					"Visual":
 					(JUICINESS,
 					SHOW_EYES,
-					SHOW_NAMES),
+					SHOW_NAMES,
+					BEE_STYLE,
+					SPECIES_STYLE),
 
 					"Family Tree":
 					(TREE_THICKNESS,
 					TREE_V_SPACING,
-					TREE_H_SPACING),
+					TREE_H_SPACING,
+					TREE_COLOR_VARIATION),
 
 					"Brain Type":
 					(SENSITIVITY_TO_PLAYER,
 					BRAIN_BIAS,
-					MEMORY_STRENGTH,),
+					MEMORY_STRENGTH,
+					BRAIN_ACTIVATION),
 					}
 
 					miscsettings = copy.deepcopy(settings)
@@ -938,7 +949,7 @@ def main_loop():
 		for phys in [p] + r.food + r.bullets:
 			phys.update(dt, key_states, key_presses)
 
-		updatefamilytree = 0
+
 
 		for b in r.bees:
 			b.update(dt, key_states, key_presses)
@@ -946,7 +957,6 @@ def main_loop():
 				updatefamilytree = 1
 				b.request_family_tree_update = 0
 
-		
 		if settings[SPECIES_STYLE] == 3:
 			if not framecount % 3:
 				myspeciesplot.update(r.bees + r.deadbees)
@@ -965,9 +975,11 @@ def main_loop():
 					if b.dead == 2:
 						r.deadbees.remove(b)
 
-		'''if updatefamilytree:
+		updatefamilytree = 0
+
+		if updatefamilytree:
 			myfamilytree.update(r.bees)
-			myfamilytree.draw(screen, (840, 0))'''
+			myfamilytree.draw(screen, (840, 0))
 
 		r.update() # Necessarily comes afterwards so that the bees can see the player
 		if r.signal_new_tree:
@@ -991,14 +1003,14 @@ def main_loop():
 
 		seconds = pygame.time.get_ticks() / 1000
 
-		t0 = "Plotted on right: "
+		t0 = ""
 
 		if settings[SPECIES_STYLE] == 1:
-			t0 += "x: horizontal movement, y: generation"
+			t0 += "Plotted on right: x: horizontal movement, y: generation"
 		elif settings[SPECIES_STYLE] == 2:
-			t0 += "x: generation, y: vertical movement"
-		else:
-			t0 += "x: horizontal movement, y: vertical movement"
+			t0 += "Plotted on right: x: generation, y: vertical movement"
+		elif settings[SPECIES_STYLE] == 3:
+			t0 += "angle: direction, radius: generation"
 
 		t.permanent_text = [t0]
 

@@ -90,7 +90,7 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(11, [4])
+			self.brain = brain.Brain(11, [2])
 		self.radius = radius
 		self.health = settings[MAX_HEALTH]
 		self.color = color
@@ -481,9 +481,9 @@ class Bee(physical.Physical):
 			self.outputs = outputs = self.brain.compute(inputs)
 			test.record("Computing brain outputs")
 
-			self.up = outputs[0] - outputs[1]
+			self.up = 2 * outputs[0] - 1
 			#down = outputs[1]
-			self.leftright = outputs[3] - outputs[2]
+			self.leftright = 2 * outputs[1] - 1
 			#print linalg.norm(self.vxy)
 
 			self.color = self.room.painter.get_color(self)

@@ -7,7 +7,7 @@ scroll = 200
 class FamilyTree(object):
 	def __init__(self):
 		self.w = 600
-		self.h = 400
+		self.h = 800
 		self.tree = pygame.Surface((self.w, self.h))
 		self.horizontal_position = 0
 		self.depth = 5
@@ -19,7 +19,7 @@ class FamilyTree(object):
 		ranks = { ancestry:i for i,ancestry in enumerate(ancestries)}
 		newdepth = (self.depth+settings[TREE_V_SPACING])
 		if newdepth > self.h:
-			if 0:
+			if 1:
 				self.tree.blit(self.tree, (0,-scroll))
 				r = pygame.Rect(0,self.h - scroll, self.w, scroll)
 				pygame.draw.rect(self.tree, [0,0,0], r)

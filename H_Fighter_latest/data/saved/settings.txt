@@ -28,7 +28,7 @@ p9
 I60
 sS'Species Visualization Style'
 p10
-I3
+I4
 sS'Memory Strength'
 p11
 I1
@@ -50,27 +50,27 @@ I0
 sS'Show Names'
 p17
 I00
-sS'Congeal CONGEAL_THOROUGHNESS'
-p18
-I1
 sS'Eye Mutation Range'
-p19
+p18
 I5
 sS'Sticky Walls'
-p20
+p19
 I0
 sS'Juiciness'
-p21
+p20
 I0
 sS'Slowness Penalty'
+p21
+F0.1
+sS'Brain Activation'
 p22
-F0.3
+I3
 sS'Tile Minimum Neighbors'
 p23
 I5
 sS'Health Gain'
 p24
-F0.3
+I0
 sS'Gravity'
 p25
 F0.0006
@@ -82,28 +82,28 @@ p27
 I1
 sS'Congeal Thoroughness'
 p28
-I1
+F0.4
 sS'Generate Random Map'
 p29
 I0
 sS'Tree Vertical Spacing'
 p30
-I1
+I5
 sS'Offspring Mutation Rate'
 p31
 I1
 sS'Brain Bias'
 p32
-F0.01
+I1
 sS'Automatic Bee Evasion'
 p33
 I0
 sS'Sensitivity To Player Position'
 p34
-I2
+I10
 sS'Tree Horizontal Spacing'
 p35
-I1
+I5
 sS'Cost of Jumping'
 p36
 I0
@@ -112,7 +112,7 @@ p37
 I00
 sS'Wall Acid'
 p38
-F0.3
+F0.1
 sS"'Too Slow' Threshold"
 p39
 F0.1
@@ -121,11 +121,11 @@ p40
 I0
 sS'Tree Color Variation'
 p41
-I30
+I50
 sS'Tile Maximum Neighbors'
 p42
 I6000
 sS'Speed Payoff'
 p43
-I1
+F0.7
 s.

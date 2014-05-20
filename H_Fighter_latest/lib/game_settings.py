@@ -47,6 +47,7 @@ RANDOM_MAP_RADIUS = "Mapgen Neighborhood radius"
 SENSITIVITY_TO_PLAYER = "Sensitivity To Player Position"
 BRAIN_BIAS = "Brain Bias"
 MEMORY_STRENGTH = "Memory Strength"
+BRAIN_ACTIVATION = "Brain Activation"
 
 #Family Tree
 TREE_V_SPACING = "Tree Vertical Spacing"
@@ -88,6 +89,7 @@ SHOW_NAMES : 1,
 CREATURE_MODE : 1,
 COST_OF_JUMP : 0.1,
 BRAIN_BIAS : 10,
+BRAIN_ACTIVATION : 1,
 MEMORY_STRENGTH : 0.1,
 RANDOM_TILE_DENSITY : 0.11,
 CONGEAL_THOROUGHNESS : 0.4,
@@ -127,6 +129,7 @@ TREE_H_SPACING,
 TREE_V_SPACING,
 SPECIES_STYLE,
 BEE_STYLE,
+BRAIN_ACTIVATION,
 ]
 
 max_val = {
@@ -140,8 +143,9 @@ CREATURE_MODE: 1,
 MEMORY_STRENGTH: 1,
 RANDOM_TILE_DENSITY: 1,
 CONGEAL_THOROUGHNESS: 1,
-SPECIES_STYLE: 3,
+SPECIES_STYLE: 4,
 BEE_STYLE: 2,
+BRAIN_ACTIVATION: 3,
 }
 
 min_val = {
@@ -161,6 +165,7 @@ TREE_H_SPACING: 1,
 SPECIES_STYLE: 1,
 MAXIMUM_BEES: 1,
 BEE_STYLE: 1,
+BRAIN_ACTIVATION: 1,
 }
 
 def problem_with_setting(key, value):
@@ -193,9 +198,8 @@ def load_settings():
 		print "\n\n* * * * * * Loaded Settings * * * * * *"
 		
 		for key, value in loaded_settings.iteritems():
-			if key != "Wraparound_Tracking":
-				settings[key] = value
-				print key, ":", str(value)
+			settings[key] = value
+			print key, ":", str(value)
 		g.close()
 	except:
 		print "Failed to load settings. (File may have been corrupted or empty.)"

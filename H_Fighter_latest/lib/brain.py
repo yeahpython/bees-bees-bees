@@ -48,9 +48,12 @@ specialdrawinglines = {
 include_cycles = True	
 
 def afunc(x):
-	return x / 10
-	#return x > 0
-	#return 1/(1+math.e**(-x))
+	if settings[BRAIN_ACTIVATION] == 1:
+		return x / 10
+	elif settings[BRAIN_ACTIVATION] == 2:
+		return x > 0
+	else:
+		return 1/(1+math.e**(-x))
 
 def welp(x):
 	return 2/(1+math.e**-x) - 1

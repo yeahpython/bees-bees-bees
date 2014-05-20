@@ -94,13 +94,23 @@ class SpeciesPlot(object):
 
 		inputs = [0.0,0.0] + [1 - distance for distance in infoz] + [1.0]
 
-		up, down, left, right = bee.brain.compute(inputs, use_memory = 0)
+		downup, rightleft = bee.brain.compute(inputs, use_memory = 0)
+		if settings[BRAIN_ACTIVATION] != 1:
+			downup = -2 * downup + 1
+			rightleft = 2 * rightleft - 1
 		if settings[SPECIES_STYLE] == 1:
-			return right - left, 1 - ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2
+			return rightleft, 1 - ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2
 		elif settings[SPECIES_STYLE] == 2:
-			return ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2 - 1, down - up
+			return ((len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry))*2 - 1, downup
 		else:
-			return right - left, down - up
+			x,y = rightleft, downup
+			radius = (len(bee.ancestry) - self.min_ancestry) * 1.0 / (self.max_ancestry - self.min_ancestry)
+			l = (x ** 2 + y ** 2)**0.5
+			if not l:
+				l = 1
+			x = x / l * radius
+			y = y / l * radius
+			return x, y
 
 	def get_location(self, representation):
 		#a, b = representation
@@ -110,11 +120,17 @@ class SpeciesPlot(object):
 		a, b = representation
 		#a, b = log_skew(a), log_skew(b)
 		if settings[SPECIES_STYLE] == 3:
-			l = (a**2 + b**2)**0.5 + 0.01
-			a, b = a / l, b / l
-			a, b = 40 * a, 40 * b
+			#l = (a**2 + b**2)**0.5 + 0.01
+			#a, b = a / l, b / l
+			a, b = 120 * a, 120 * b
+		elif settings[SPECIES_STYLE] == 4:
+			a, b = self.w / 2 * a, self.w / 2 * b
+		elif settings[SPECIES_STYLE] == 1:
+			a *= 120
+			b *= self.h / 2.4
 		else:
-			a, b = (self.w / 2.4) * a, (self.h / 2.4) * b
+			b *= 120
+			a *= self.h / 2.4
 		a += self.w / 2
 		b += self.h / 2
 		a = int(a)
@@ -122,6 +138,8 @@ class SpeciesPlot(object):
 		return a,b
 
 	def update(self, bees):
+		if not self.plot:
+			self.plot = pygame.Surface((self.w, self.h))
 		c = int(bees[0].player.xy[0,0] / bw)
 		r = int(bees[0].player.xy[0,1] / bh)
 		#if c == self.col and r == self.row and randrange(40):
@@ -149,6 +167,10 @@ class SpeciesPlot(object):
 			b.familytreeuse = 0
 
 
+		if settings[SPECIES_STYLE] == 4:
+			pygame.draw.circle(self.plot, [255, 255, 255], (self.w/2, self.h/2), self.w/2, 1)
+
+
 		maxrad = 10
 		# Drawing everything
 		for b in bees:
@@ -164,8 +186,8 @@ class SpeciesPlot(object):
 				origin = self.get_location((0.0,0.0))
 				if settings[SPECIES_STYLE] == 3:
 					#pygame.draw.line(self.plot, [0,0,0], beepos, parent, thickness + 5)
-					#pygame.draw.line(self.plot, [50, 50, 50], beepos, parent, 1)
-					pygame.draw.line(self.plot, b.treecolor, beepos, origin, 3)
+					pygame.draw.line(self.plot, b.treecolor, beepos, parent, 1)
+					#pygame.draw.line(self.plot, b.treecolor, beepos, origin, 3)
 				else:
 					#pygame.draw.line(self.plot, [0,0,0], beepos, parent, thickness + 5)
 					pygame.draw.line(self.plot, b.treecolor, beepos, parent, 1)
@@ -210,7 +232,7 @@ class SpeciesPlot(object):
 
 	def draw(self, surface, position = (0,0)):
 		if settings[SPECIES_STYLE] == 3:
-			surface.blit(self.plot, position, special_flags=pygame.BLEND_ADD)
+			surface.blit(self.plot, position, special_flags=pygame.BLEND_MAX)
 		else:
 			surface.blit(self.plot, position)
 

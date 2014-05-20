@@ -42,7 +42,6 @@ class Physical(object):
 		self.stationary = 0
 		self.visible = 0
 		self.color = graphics.creature
-		self.topbar = room.topbar
 		self.radius = 0
 		self.name = ""
 		self.health = 1
