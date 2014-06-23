@@ -152,7 +152,7 @@ class Brain(object):
 
 	def compute(self, inp, use_memory = 1):
 		"Take the input nodes and work out what happens at the output"
-		settings[BRAIN_BIAS]
+		#settings[BRAIN_BIAS]
 		self.nodes[0] = matrix(inp + [settings[BRAIN_BIAS]])
 		for i, edges in enumerate(self._all_edges):
 			if include_cycles:
@@ -610,6 +610,7 @@ class Brain(object):
 
 
 	def mutate(self):
+		print self._all_edges
 		for layer in self._all_edges:
 			s = layer.shape
 			for r in range(s[0]):
@@ -619,6 +620,10 @@ class Brain(object):
 						layer[r,c] += (random.random()*2 - 1) * settings[ADDITIVE_MUTATION_RATE]
 						if random.random() < settings[INVERT_MUTATION_RATE]:
 							layer[r,c]*= -1
+						#if layer[r,c] > 5:
+						#	layer[r,c] = 5.0
+						#if layer[r,c] < -5:
+						#	layer[r,c] = -5.0
 					#if random.random() >= 0.9**self.mutationrate[1]:
 					#	layer[r,c] *= -1
 					#if random.random() >= 0.9**self.mutationrate[2]:

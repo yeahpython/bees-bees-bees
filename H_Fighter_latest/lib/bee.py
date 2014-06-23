@@ -90,7 +90,7 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(11, [2])
+			self.brain = brain.Brain(11, [15, 2])
 		self.radius = radius
 		self.health = settings[MAX_HEALTH]
 		self.color = color
@@ -296,9 +296,9 @@ class Bee(physical.Physical):
 						color = self.color
 						#w = 1
 						#w = int((linalg.norm(self.vxy) * 10 + 1) * (steps-x))
-						#w =  steps-x
-						w = x + 1
-						w = 1
+						w =  steps-x
+						#w = x + 1
+						#w = 1
 						pygame.draw.line(surface, color, (start[0,0], start[0,1]), (end[0,0], end[0,1]), w)
 						#pygame.draw.line(surface, [0,0,0], (start[0,0], start[0,1]), (end[0,0], end[0,1]), 2)
 				if not x:
@@ -494,7 +494,7 @@ class Bee(physical.Physical):
 												self.color = [min(a,255) for a in self.color]'''
 
 
-			if 1==0 and outputs[2] > 0 and self.timesincelastshot > 1000:
+			if 0 and outputs[2] > 0 and self.timesincelastshot > 1000:
 				self.timesincelastshot = 0
 				direction = matrix([outputs[3],outputs[4]])
 				direction = disp_to_p

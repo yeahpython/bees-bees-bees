@@ -208,6 +208,12 @@ class SpeciesPlot(object):
 			if b.parent and b.parent.parent and b.parent.dead and (b.parent.familytreeuse == 1):
 				b.parent.dead = 2
 		
+		# kiling the trunk of the family tree
+		for b in bees:
+			if b.dead and not b.parent and (b.familytreeuse == 1):
+				b.dead = 2
+				break
+
 		# Substituting boring chains, part two
 		for b in bees:
 			if b.parent and b.parent.dead == 2:

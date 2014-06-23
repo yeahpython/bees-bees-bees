@@ -7,7 +7,7 @@ p2
 F0.0001
 sS'Wraparound Tracking'
 p3
-I01
+I00
 sS'Show Help'
 p4
 I00
@@ -56,76 +56,79 @@ I5
 sS'Sticky Walls'
 p19
 I0
-sS'Juiciness'
+sS'Tree Update Time'
 p20
+I20
+sS'Juiciness'
+p21
 I0
 sS'Slowness Penalty'
-p21
+p22
 F0.1
 sS'Brain Activation'
-p22
+p23
 I3
 sS'Tile Minimum Neighbors'
-p23
+p24
 I5
 sS'Health Gain'
-p24
+p25
 I0
 sS'Gravity'
-p25
+p26
 F0.0006
 sS'Maximum Health'
-p26
-I1
-sS'Mutation Chances'
 p27
 I1
-sS'Congeal Thoroughness'
+sS'Mutation Chances'
 p28
+I1
+sS'Congeal Thoroughness'
+p29
 F0.4
 sS'Generate Random Map'
-p29
+p30
 I0
 sS'Tree Vertical Spacing'
-p30
+p31
 I5
 sS'Offspring Mutation Rate'
-p31
-I1
-sS'Brain Bias'
 p32
 I1
-sS'Automatic Bee Evasion'
+sS'Brain Bias'
 p33
+I1
+sS'Automatic Bee Evasion'
+p34
 I0
 sS'Sensitivity To Player Position'
-p34
+p35
 I10
 sS'Tree Horizontal Spacing'
-p35
+p36
 I5
 sS'Cost of Jumping'
-p36
+p37
 I0
 sS'Show Eyes'
-p37
+p38
 I00
 sS'Wall Acid'
-p38
-F0.1
-sS"'Too Slow' Threshold"
 p39
 F0.1
-sS'Swarming Peer Pressure'
+sS"'Too Slow' Threshold"
 p40
+F0.1
+sS'Swarming Peer Pressure'
+p41
 I0
 sS'Tree Color Variation'
-p41
+p42
 I50
 sS'Tile Maximum Neighbors'
-p42
+p43
 I6000
 sS'Speed Payoff'
-p43
+p44
 F0.7
 s.

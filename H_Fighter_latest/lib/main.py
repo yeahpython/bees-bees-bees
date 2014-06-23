@@ -785,7 +785,8 @@ def main_loop():
 					(TREE_THICKNESS,
 					TREE_V_SPACING,
 					TREE_H_SPACING,
-					TREE_COLOR_VARIATION),
+					TREE_COLOR_VARIATION,
+					TREE_UPDATE_TIME),
 
 					"Brain Type":
 					(SENSITIVITY_TO_PLAYER,
@@ -957,8 +958,9 @@ def main_loop():
 				updatefamilytree = 1
 				b.request_family_tree_update = 0
 
+		'''draw every frame, since the tree follows the player around'''
 		if settings[SPECIES_STYLE] == 3:
-			if not framecount % 3:
+			if not framecount % settings[TREE_UPDATE_TIME]:
 				myspeciesplot.update(r.bees + r.deadbees)
 				for b in r.deadbees:
 					if b.dead == 2:
@@ -966,7 +968,8 @@ def main_loop():
 			myspeciesplot.draw(world, (int(p.xy[0,0]) - myspeciesplot.w/2, int(p.xy[0,1]) - myspeciesplot.h/2))
 		
 		else:
-			if not framecount % 3:
+			'''update once every few frames'''
+			if not framecount % settings[TREE_UPDATE_TIME]:
 				myspeciesplot.update(r.bees + r.deadbees)
 				myspeciesplot.draw(screen, (840,0))
 
