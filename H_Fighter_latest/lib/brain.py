@@ -610,7 +610,7 @@ class Brain(object):
 
 
 	def mutate(self):
-		print self._all_edges
+		#print self._all_edges
 		for layer in self._all_edges:
 			s = layer.shape
 			for r in range(s[0]):

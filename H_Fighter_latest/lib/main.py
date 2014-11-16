@@ -940,12 +940,12 @@ def main_loop():
 			dt = 0
 
 
-		mod = 2
+		mod = 20
 		#each bee updates once every mod frames
 
 		'''Update'''
 		for i, bee in enumerate(r.bees):
-			bee.slow = (i + framecount) % mod
+			bee.slow = 1# (i + framecount) % mod
 
 		for phys in [p] + r.food + r.bullets:
 			phys.update(dt, key_states, key_presses)
@@ -998,7 +998,7 @@ def main_loop():
 			x.draw(world)
 		
 		# Time
-		dt = clock.tick(400)
+		dt = clock.tick(120)
 		dt = min(dt, 45) # Make it seem like a slowed down version of 22fps if necessary
 		#print dt, "this is dt"
 

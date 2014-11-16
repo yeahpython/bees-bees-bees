@@ -525,7 +525,7 @@ class Bee(physical.Physical):
 					self.vxy += self.dvy
 					self.health -= settings[COST_OF_JUMP]
 			else:
-				self.vxy[0,0] += self.leftright * 0.1
+				self.vxy[0,0] += self.leftright * 0.01
 
 			self.vxy *= speed_decay**dt
 

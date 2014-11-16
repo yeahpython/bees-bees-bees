@@ -134,7 +134,7 @@ class Player(physical.Physical):
 			self.randomize_position()
 
 		if key_states[pygame.K_g]:
-			self.topbar.flash("Generating bees!")
+			#self.topbar.flash("Generating bees!")
 			self.room.generate_bees(1)
 
 		'''add kill mode'''

@@ -202,8 +202,21 @@ class SpeciesPlot(object):
 				else:
 					pygame.draw.circle(self.plot, b.treecolor, beepos, thickness)
 
-		
-		# Substituting boring chains
+		for b in bees:
+			if b.parent and b.parent.dead and b.parent.familytreeuse == 1:
+				# if your dead father has only one son
+				# your father is your grandfather
+				b.parent.dead = 2
+				b.parent = b.parent.parent
+				
+
+		for b in bees:
+			if b.dead and b.familytreeuse == 0:
+				# if dead and with no descendants remove
+				b.dead = 2
+
+
+		'''# Substituting boring chains
 		for b in bees:
 			if b.parent and b.parent.parent and b.parent.dead and (b.parent.familytreeuse == 1):
 				b.parent.dead = 2
@@ -233,7 +246,7 @@ class SpeciesPlot(object):
 				potential_descendant = ancestries[i]
 				if not is_ancestor(b.ancestry, potential_descendant):
 					#Then this bee has no living descendents. Mark it for removal.
-					b.dead = 2
+					b.dead = 2'''
 		
 
 	def draw(self, surface, position = (0,0)):
