@@ -25,10 +25,10 @@ p8
 I60
 sS'Overpopulation Limit'
 p9
-I60
+I30
 sS'Species Visualization Style'
 p10
-I2
+I4
 sS'Memory Strength'
 p11
 I1
