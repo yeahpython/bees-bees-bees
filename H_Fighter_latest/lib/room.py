@@ -26,7 +26,7 @@ from game_settings import *
 
 USE_IMAGES = 0
 DRAW_RANDOM_CIRCLES = 0
-VISUALIZE_MAP_LOAD = 0
+VISUALIZE_MAP_LOAD = 1
 TIME_INITIALIZATION = 0
 
 #increase this to make a very distint and impermeable floor / wall
@@ -432,6 +432,7 @@ class Room(object):
 
 		nextmessage = messages.say("precomputing vision", 0, down = nextmessage)
 		self.precompute_vision()
+		
 
 	def globalize_dimensions(self):
 		global rows, cols

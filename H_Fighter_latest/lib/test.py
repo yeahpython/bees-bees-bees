@@ -5,6 +5,17 @@ import numpy
 from numpy import array, linalg, matrix
 import collision
 import time
+import string
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 sides = []
 vectors = [(0,0), (0,0)]
@@ -24,7 +35,7 @@ SHOW_INDICATORS = 0
 SHOW_LINES = 0
 SHOW_TILES = 0
 SHOW_BACKGROUND_MARKERS = 0
-SHOW_TEXT = 0
+SHOW_TEXT = 1
 
 
 segs = [] #a list of times
@@ -49,19 +60,29 @@ def begin_timing(segs, segdescriptors):
 	segs[:] = [time.time()]
 	segdescriptors[:] = []
 
-def add_sticky(*args):
-	stickylabels.extend(args)
-
-def remove_sticky(*args):
-	for label in args:
-		stickylabels.remove(label)
-
 def record(*args):
 	'''this will register the time between the last call to record and this overlap_line
 	as being spent on args'''
 	segs.append(time.time())
 	segdescriptors.append(args)
 	segdescriptors[-1] = segdescriptors[-1] + tuple(stickylabels)
+
+def add_sticky(*args):
+	record()
+	stickylabels.extend(args)
+
+def remove_sticky(*args):
+	record()
+	for label in args:
+		stickylabels.remove(label)
+
+# sort by parent and then by time
+def decorator(x):
+	i = string.rfind(x[1], ":");
+	if i != -1:
+		return x[1][:i], -x[0]
+	else:
+		return x[1], -x[0]
 
 def summarizetimings(segs, segdescriptors):
 	frames[0] += 1
@@ -86,14 +107,58 @@ def summarizetimings(segs, segdescriptors):
 
 		wolo = []
 
-		for k, v in totaldict.iteritems():
-			wolo.append( (v,k) )
+		n = 20
+		stardict = {task:" "*n for task,time in totaldict.iteritems()}
+		timeThresholds = [segs[0] + total / n * i for i in range(n)]
+		curr = 0
+		for i, keys in enumerate(segdescriptors):
+			if segs[i] >= timeThresholds[curr]:
+				for key in keys:
+					index = int((segs[i] - segs[0]) * n / total)
+					if index < 0:
+						index = 0
+					if index >= n:
+						index = n-1
+					stardict[key] = stardict[key][:index] + "*" + stardict[key][index+1:]
+				curr += 1
+				if curr >= len(timeThresholds):
+					break
 
-		wolo.sort(key = lambda x: x[0])
+
+		for task, time in totaldict.iteritems():
+			a = [time]
+			g = task[:]
+			while (True):
+				i = string.rfind(g, ":")
+				if i == -1:
+					break
+				g = g[:i]
+				if g not in totaldict:
+					break
+				a.append(totaldict[g]) # append the time of its parent
+
+			wolo.append( (time,task, [-x for x in a[::-1]]) )
+
+		wolo.sort(key = lambda x: x[2]) 
+		#wolo.sort(key = decorator) 
 
 		print "time taken was", total, "seconds"
-		for v, k in wolo:
-			print "{0}%".format(round(v, 3)), k
+
+		for v, k, a in wolo:
+			
+			#n_stars = int(v) * total_stars / 100
+			#print (total_stars-n_stars)*" " + n_stars*("*"),
+			print stardict[k],
+			print "%3d" % v,
+			i = string.rfind(k, ":")
+			if i != -1:
+				if (k[:i]) in totaldict:
+					print " "*i+bcolors.OKGREEN + k[i:]+ bcolors.ENDC
+				else:
+					print k[:i]+bcolors.OKGREEN + k[i:]+ bcolors.ENDC
+			else:
+				print bcolors.OKGREEN+ k+ bcolors.ENDC
+
 
 	segs = []
 	segdescriptors = []

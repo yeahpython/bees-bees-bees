@@ -18,11 +18,15 @@ class Palette(object):
 		self.scaling = [1.0 / (abs(M- m) + 0.01) for M, m in zip(self.max, self.min)]
 
 	def get_color(self, b):
-		outputs = b.outputs[:]
-		for i in range(2):
-			outputs[i] = (outputs[i] - self.min[i]) * self.scaling[i]
-		color = [outputs[0], outputs[1], outputs[1] - outputs[0]]
-		color = [min(i, 1) for i in color]
-		color = [max(i, 0) for i in color]
-		color = [int(50 + i * 205) for i in color]
-		return color
+		try:
+			outputs = b.outputs[:]
+			for i in range(2):
+				outputs[i] = (outputs[i] - self.min[i]) * self.scaling[i]
+			color = [outputs[0], outputs[1], outputs[1] - outputs[0]]
+			color = [min(i, 1) for i in color]
+			color = [max(i, 0) for i in color]
+			color = [int(50 + i * 205) for i in color]
+			return color
+		except:
+			print "palette error"
+			return (255, 255, 255)

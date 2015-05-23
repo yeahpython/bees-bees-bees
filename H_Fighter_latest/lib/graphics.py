@@ -1,3 +1,5 @@
+from numpy import matrix
+
 bw = 30
 bh = 30
 
@@ -5,6 +7,7 @@ world_tw = 0
 world_th = 0
 world_w = "lmfao"
 world_h = "chrchr"
+world_center = None
 world_size = (world_w, world_h)
 
 def load(file_in):
@@ -14,11 +17,12 @@ def load(file_in):
 	file_descriptor.close()
 
 def extract_dimensions(lines):
-	global world_th, world_tw, world_w, world_h, world_size
+	global world_th, world_tw, world_w, world_h, world_size, world_center
 	world_th = len(lines)-1
 	world_tw = len(lines[-1])
 	world_w = world_tw * bw
 	world_h = world_th * bh
+	world_center = matrix([world_w/2, world_h/2])
 	world_size = (world_w, world_h)
 
 #world_w = world_tw * bw

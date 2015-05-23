@@ -427,6 +427,7 @@ def main_loop():
 		if level == "quit":
 			return
 		world, t, r = preparelevel(screen, level)
+	pygame.display.get_surface().fill((50,50,50))
 	
 	p = player.Player(r)
 
@@ -471,6 +472,7 @@ def main_loop():
 		framecount += 1
 
 		test.begin_timing(test.segs, test.segdescriptors)
+		test.add_sticky('main:early')
 		#Handle player input
 		key_presses = pygame.event.get(pygame.KEYDOWN)
 		key_states = pygame.key.get_pressed()
@@ -947,18 +949,34 @@ def main_loop():
 		for i, bee in enumerate(r.bees):
 			bee.slow = 1# (i + framecount) % mod
 
-		for phys in [p] + r.food + r.bullets:
+		test.add_sticky('main:playerupdate')
+		p.update(dt, key_states, key_presses)
+		test.remove_sticky('main:playerupdate')
+
+		for phys in r.food + r.bullets:
 			phys.update(dt, key_states, key_presses)
 
+		try:
+			test.remove_sticky('main:early')
+		except:
+			print "The main:early error came up"
 
-
+		test.add_sticky('bee')
 		for b in r.bees:
 			b.update(dt, key_states, key_presses)
 			if b.request_family_tree_update:
 				updatefamilytree = 1
 				b.request_family_tree_update = 0
+		test.remove_sticky('bee')
 
-		'''draw every frame, since the tree follows the player around'''
+
+
+		test.add_sticky('main:late') ##########
+
+		'''
+		test.add_sticky('tree') ##########
+
+		#draw every frame, since the tree follows the player around
 		if settings[SPECIES_STYLE] == 3:
 			if not framecount % settings[TREE_UPDATE_TIME]:
 				myspeciesplot.update(r.bees + r.deadbees)
@@ -968,7 +986,7 @@ def main_loop():
 			myspeciesplot.draw(world, (int(p.xy[0,0]) - myspeciesplot.w/2, int(p.xy[0,1]) - myspeciesplot.h/2))
 		
 		else:
-			'''update once every few frames'''
+			#update once every few frames
 			if not framecount % settings[TREE_UPDATE_TIME]:
 				myspeciesplot.update(r.bees + r.deadbees)
 				myspeciesplot.draw(screen, (840,0))
@@ -983,27 +1001,41 @@ def main_loop():
 		if updatefamilytree:
 			myfamilytree.update(r.bees)
 			myfamilytree.draw(screen, (840, 0))
-
+		'''
+		test.add_sticky('main:late:1') 
 		r.update() # Necessarily comes afterwards so that the bees can see the player
+		
+
+		'''
 		if r.signal_new_tree:
 			r.signal_new_tree = 0
 			myfamilytree.depth += 2*settings[TREE_V_SPACING]
+
+		test.remove_sticky('tree') ##########
+		'''
+
 		c.follow_player(dt) # Here so that room knows what to draw
 		c.updatesight()
 
 		
 		test.draw(world, r)
 
-		for x in r.bees + r.food + [p] + r.bullets:
+		test.add_sticky('bee')
+		for x in r.bees:
+			x.draw(world)
+		test.remove_sticky('bee')
+
+		for x in r.food + [p] + r.bullets:
 			x.draw(world)
 		
 		# Time
 		dt = clock.tick(120)
+
 		dt = min(dt, 45) # Make it seem like a slowed down version of 22fps if necessary
 		#print dt, "this is dt"
 
 		c.draw()
-
+		'''
 		seconds = pygame.time.get_ticks() / 1000
 
 		t0 = ""
@@ -1041,13 +1073,20 @@ def main_loop():
 
 		t.permanent_text.append("[h]: %s help" % ("hide" if settings[SHOW_HELP] else "show"))
 
-		t.draw(screen)
+		t.draw(screen)'''
+		test.remove_sticky('main:late:1') 
+		test.add_sticky('main:late:displayflip') 
 		pygame.display.flip()
+		test.remove_sticky('main:late:displayflip') 
 
 		for phys in r.bees + r.food + [p]:
 			phys.visible = c.can_see(phys)
 
+		test.remove_sticky('main:late')
+
 		test.summarizetimings(test.segs, test.segdescriptors)
+		if framecount % 30 == 0:
+			print int(clock.get_fps()), "fps"
 		pygame.event.pump()
 
 

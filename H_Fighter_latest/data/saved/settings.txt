@@ -4,13 +4,13 @@ p1
 I1
 sS'Health Loss Rate'
 p2
-F0.0001
+F1e-05
 sS'Wraparound Tracking'
 p3
-I00
+I01
 sS'Show Help'
 p4
-I00
+I01
 sS'Scaling Mutation Rate'
 p5
 I0
@@ -25,7 +25,7 @@ p8
 I60
 sS'Overpopulation Limit'
 p9
-I30
+I60
 sS'Species Visualization Style'
 p10
 I4
@@ -43,7 +43,7 @@ p14
 I1
 sS'Bee Style'
 p15
-I1
+I2
 sS'Creature Mode'
 p16
 I0
@@ -55,7 +55,7 @@ p18
 I5
 sS'Sticky Walls'
 p19
-I0
+I1
 sS'Tree Update Time'
 p20
 I1
@@ -73,7 +73,7 @@ p24
 I5
 sS'Health Gain'
 p25
-F0.1
+I1
 sS'Gravity'
 p26
 F0.0006
@@ -88,7 +88,7 @@ p29
 F0.4
 sS'Generate Random Map'
 p30
-I0
+I00
 sS'Tree Vertical Spacing'
 p31
 I5
@@ -115,7 +115,7 @@ p38
 I00
 sS'Wall Acid'
 p39
-F0.1
+F0.03
 sS"'Too Slow' Threshold"
 p40
 F0.05
@@ -130,5 +130,5 @@ p43
 I6000
 sS'Speed Payoff'
 p44
-F0.4
+F0.1
 s.

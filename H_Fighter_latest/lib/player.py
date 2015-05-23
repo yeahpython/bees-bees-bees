@@ -70,14 +70,22 @@ class Player(physical.Physical):
 
 	def update(self, dt, key_states, key_presses):
 		test.add_sticky('player')
+		test.add_sticky('update player')
+		test.add_sticky('update player 1')
+		test.add_sticky('update player 2')
 		super(Player, self).update(dt, key_states, key_presses)
+		test.remove_sticky('update player 2')
+
+
 		self.maybe_die()
 
+		
 		for phys in self.objectsinview:
 			if phys.kind == "bullet":
 				phys.hit_player()
 			elif phys.kind == "bee":
 				phys.eat_player()
+
 
 		self.lifetime += 1
 		#self.radius *= 1.001
@@ -150,6 +158,7 @@ class Player(physical.Physical):
 		'''
 
 		self.feetSupported = self.grounded
+		test.remove_sticky('update player 1')
 		
 		'''
 		if self.feetSupported and not (key_states[pygame.K_LEFT] or key_states[pygame.K_RIGHT] or key_states[pygame.K_UP]):
@@ -216,6 +225,7 @@ class Player(physical.Physical):
 			self.lastnonwall = c, r
 
 		test.remove_sticky('player')
+		test.remove_sticky('update player')
 
 	def eat(self, food):
 		for f in food:
@@ -226,6 +236,7 @@ class Player(physical.Physical):
 
 	def draw(self, surface):
 		test.add_sticky('player')
+		test.add_sticky('draw player')
 
 		super(Player, self).draw(surface)
 		if self.losinghealth:
@@ -391,7 +402,9 @@ class Player(physical.Physical):
 		# My velocity
 		#endxy = ixy+numpy.round_(self.vxy*10)
 		#pygame.draw.line(surface, (255, 255, 0), array(ixy)[0], array(endxy)[0], 1)
+		test.remove_sticky('draw player')
 		test.remove_sticky('player')
+
 		self.losinghealth = 0
 
 

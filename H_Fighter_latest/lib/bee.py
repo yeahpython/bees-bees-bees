@@ -90,7 +90,7 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(11, [15, 2])
+			self.brain = brain.Brain(11, [15, 15, 2])
 		self.radius = radius
 		self.health = settings[MAX_HEALTH]
 		self.color = color
@@ -364,6 +364,7 @@ class Bee(physical.Physical):
 
 
 	def update(self, dt, key_states, key_presses, allow_randomize = 1):
+		
 		'''physics, thinking, moving'''
 		try:
 			self.lifetime += 1
@@ -379,16 +380,17 @@ class Bee(physical.Physical):
 			self.dt = dt
 			self.xy += self.vxy*self.dt
 			return
+		test.add_sticky('bee:update')
+		test.add_sticky("bee:update:start")
 
 		self.prevpos = self.xy * 1
 		fullname = self.name + str(self.ancestry)
 
-		test.add_sticky('bee')
-
 		super(Bee, self).update(dt, key_states, key_presses)
 
-		test.record("physical inherited update")
 
+		test.remove_sticky("bee:update:start")
+		test.add_sticky("bee:update:health,birth,eating")
 		self.timesincelastshot += dt
 
 		#for b in self.bullets:
@@ -398,6 +400,7 @@ class Bee(physical.Physical):
 			self.update_health(dt)
 			self.considergivingbirth()
 
+		
 		self.friends*=0.9
 		self.friendsrelpos*=0.9
 		for p in self.objectsinview:
@@ -409,13 +412,19 @@ class Bee(physical.Physical):
 				self.vxy += settings[SWARMING_PEER_PRESSURE] * othervel
 			elif p.kind == "player" and not self.room.stasis:
 				self.eat_player()
+		
 
 
 		self.timesincelastthought += dt
 
-		test.record("health, birth, eating")
+		test.remove_sticky("bee:update:health,birth,eating")
 
+
+		test.add_sticky("bee:update:thinking")
 		if self.timesincelastthought > self.responsetime:
+			test.add_sticky("bee:update:thinking:inputs")
+			test.add_sticky("bee:update:thinking:inputs:1")
+			test.record()
 			self.timesincelastthought -= self.responsetime
 
 			infoz = 0
@@ -425,29 +434,31 @@ class Bee(physical.Physical):
 				r = int(self.xy[0,1] / bw)
 				infoz = self.room.visiondirectory[c%graphics.world_tw][r%graphics.world_th]
 				self.wallproximities = infoz
-				test.record("Time spent computing bee vision")
+				test.record("bee:update:thinking:inputs:vision")
 			else:
 				test.record()
 				infoz = [self.room.pointcheck((self.xy[0,0] + eye_x, self.xy[0,1] + eye_y)) for eye_x, eye_y in self.eyepoints]
-				test.record("pointchecks")
+				test.record("bee:update:thinking:inputs:pointchecks")
 
 			#go = time.time()
 			#t = [math.sin(go), math.sin(go/2.3), math.sin(go)%1.5]
-			
-			center = matrix([graphics.world_w/2, graphics.world_h/2])
+			test.remove_sticky("bee:update:thinking:inputs:1")
+			test.add_sticky("bee:update:thinking:inputs:2")
+			#center = matrix([graphics.world_w/2, graphics.world_h/2])
 
 			if STALK_CAMERA:
 				self.stalkcamera()
-
 			disp_to_p = self.player.xy - self.xy
 
 
 			if settings[WRAPAROUND_TRACKING]:
-				disp_to_p += center
+				disp_to_p += graphics.world_center
 				disp_to_p[0,0] %= graphics.world_w
 				disp_to_p[0,1] %= graphics.world_h
-				disp_to_p -= center
+				disp_to_p -= graphics.world_center
 
+			test.remove_sticky("bee:update:thinking:inputs:2")
+			test.add_sticky("bee:update:thinking:inputs:2.5")
 			player_sight_range = 50
 			disp_to_p /= player_sight_range
 			dist = linalg.norm(disp_to_p)
@@ -460,26 +471,30 @@ class Bee(physical.Physical):
 
 			#tweaked_disp *= self.sensitivity
 
-			dispx, dispy = tuple(array(disp_to_p)[0])
+			#dispx, dispy = tuple(array(disp_to_p)[0])
 			#BE REALLY CAREFUL WHEN DIVIDING THIS BY STUFF THEY ARE INTEGERS
+			test.remove_sticky("bee:update:thinking:inputs:2.5")
+			test.add_sticky("bee:update:thinking:inputs:3")
 
-			disps = [dispx, dispy]
+			disps = [disp_to_p[0,0], disp_to_p[0,1]]
 
 
 
 			dvx = self.player.vxy[0,0] - self.vxy[0,0]
 			dvy = self.player.vxy[0,1] - self.vxy[0,1]
-			
-			inputs = []
-			inputs += disps # 2
-			inputs += [1 - distance for distance in infoz] # 8
-			#inputs += [dvx, dvy] # 2
-			inputs += [self.health / settings[MAX_HEALTH]] # 1 
-			#inputs += [self.friends[0,0], self.friends[0,1], self.friendsrelpos[0,0], self.friendsrelpos[0,1]] # 4
-			test.record("Displacements")
 
+
+			
+			inputs = disps + [1 - distance for distance in infoz] + [self.health / settings[MAX_HEALTH]] # 1 
+			test.remove_sticky("bee:update:thinking:inputs:3")
+			#inputs += [self.friends[0,0], self.friends[0,1], self.friendsrelpos[0,0], self.friendsrelpos[0,1]] # 4
+			
+			test.remove_sticky("bee:update:thinking:inputs")
+
+			test.add_sticky("bee:update:thinking:compute")
 			self.outputs = outputs = self.brain.compute(inputs)
-			test.record("Computing brain outputs")
+			test.remove_sticky("bee:update:thinking:compute")
+			test.add_sticky("bee:update:thinking:outputs")
 
 			self.up = 2 * outputs[0] - 1
 			#down = outputs[1]
@@ -493,8 +508,8 @@ class Bee(physical.Physical):
 												self.color = [max(a,0) for a in self.color]
 												self.color = [min(a,255) for a in self.color]'''
 
-
-			if 0 and outputs[2] > 0 and self.timesincelastshot > 1000:
+			'''
+			if outputs[2] > 0 and self.timesincelastshot > 1000:
 				self.timesincelastshot = 0
 				direction = matrix([outputs[3],outputs[4]])
 				direction = disp_to_p
@@ -502,11 +517,12 @@ class Bee(physical.Physical):
 				b = bullet.Bullet(self, self.player, self.room, direction * outputs[2] * 2)
 				b.xy = self.xy + matrix([0,0])
 				self.room.bullets.append(b)
-				self.health -= 0.05
-
+				self.health -= 0.05'''
+			test.remove_sticky("bee:update:thinking:outputs")
+		test.remove_sticky("bee:update:thinking")
 			
 
-
+		test.add_sticky("bee:update:physics")
 		if settings[CREATURE_MODE] == 0:
 			'''bees'''
 			self.vxy += gravity*dt
@@ -561,11 +577,11 @@ class Bee(physical.Physical):
 		else:
 			self.lastnonwall = self.xy * 1
 
-
+		test.remove_sticky("bee:update:physics")
 		self.age()
 
-		test.record()
-		test.remove_sticky('bee')
+
+		test.remove_sticky('bee:update')
 
 
 	def randomize_name(self):
@@ -729,11 +745,11 @@ class Bee(physical.Physical):
 		#	pass
 
 	def draw(self, surface):
+		test.add_sticky('bee:draw')
 		#for b in self.bullets:
 		#	b.draw(surface)
 		fullname = self.name + str(self.ancestry)
-		test.add_sticky('bee')
-		test.add_sticky('draw bee')
+		
 		super(Bee, self).draw(surface)
 		ixy = self.xy.astype(int)
 
@@ -752,6 +768,7 @@ class Bee(physical.Physical):
 
 		start = self.xy
 		end = self.prevpos
+
 		'''this is here to trip you up'''
 		if abs(start[0,0] - end[0,0]) < 100:
 			if abs(start[0,1] - end[0,1]) < 100:
@@ -777,6 +794,7 @@ class Bee(physical.Physical):
 					w = 10
 					pygame.draw.line(self.room.background, [0,0,0], array(self.xy)[0], array(self.prevpos)[0], w)
 					pygame.draw.line(self.room.background, self.color, array(self.xy)[0], array(self.prevpos)[0], 1)
+
 
 		for x,y in utils.body_copies(self.xy, self.radius):
 			px = ixy[0,0] + x*graphics.world_w
@@ -817,18 +835,33 @@ class Bee(physical.Physical):
 				else:
 					pygame.draw.line(surface, regularcolor, (px+r2,py-r2), (px-r2, py+r2), 1)
 			else:
-				pygame.draw.circle(surface, regularcolor, (px, py), 1 + int(self.radius*self.health))
+				radius = 1 + int(self.radius*self.health)
+				if (radius < 1):
+					radius = 1
+				pygame.draw.circle(surface, regularcolor, (px, py), radius)
 
 			if settings[SHOW_EYES]:
 				for distance, (x,y) in zip(self.wallproximities, self.sharedeyes):
 					l = (x**2 + y**2)**0.5
-					#x0 = x/l*distance*graphics.screen_h/2
-					#y0 = y/l*distance*graphics.screen_h/2
-					#pygame.draw.line(surface, [50,50,50], (px,py), (px+x0, py+y0), 1)
+					'''x0 = x/l*distance*graphics.screen_h/2
+					y0 = y/l*distance*graphics.screen_h/2
+					pygame.draw.line(surface, [255,255,255], (px,py), (px+x0, py+y0), 1)'''
 
-					x1 = int(x/l * 20)
-					y1 = int(y/l * 20)
-					pygame.draw.circle(surface, regularcolor, ( px+x1, py+y1), 1 + int( (1 - distance) * 6) )
+					x1 = int(x/l * 10)
+					y1 = int(y/l * 10)
+					# size represents proximity
+					#pygame.draw.circle(surface, regularcolor, ( px+x1, py+y1), 1 + int( (1 - distance) * 6) )
+					
+					# color represents proximity
+					#pygame.draw.circle(surface, regularcolor, ( px+x1, py+y1), 1 + int( (1 - distance) * 6) )
+					intensity = (1-distance) * 255
+					if intensity < 0:
+						intensity = 0
+					if intensity > 255:
+						intensity = 255
+					#pygame.draw.circle(surface, (intensity, intensity, intensity), ( px+x1, py+y1), 3)
+					scaling =math.sin(22.5)
+					pygame.draw.line(surface, (intensity, intensity, intensity), ( px+x1 - y1*scaling, py+y1 +x1*scaling), ( px+x1 +y1*scaling, py+y1 - x1*scaling))
 
 
 		if settings[SHOW_NAMES]:
@@ -847,9 +880,8 @@ class Bee(physical.Physical):
 		# My velocity
 		#endxy = ixy+numpy.round_(self.vxy*10)
 		#pygame.draw.line(surface, (255, 255, 0), array(ixy)[0], array(endxy)[0], 1)
-		test.record()
-		test.remove_sticky('bee')
-		test.remove_sticky('draw bee')
+
+		test.remove_sticky('bee:draw')
 
 def look2(room, my_x, my_y, vx, vy, dt = 1.0, bw = graphics.bw, bh = graphics.bh):
 	'''returns ALL tiles that cover the path, even by just an edge or point.'''

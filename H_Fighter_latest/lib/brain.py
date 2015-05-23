@@ -5,9 +5,11 @@ import random, math, pygame
 from numpy import *
 from pygame.locals import *
 import graphics
+import test
 import messages
-from numpy import linalg
+from numpy import linalg, dot
 from game_settings import *
+from scipy.special import expit
 
 font = pygame.font.Font(None, 20)
 
@@ -55,6 +57,10 @@ def afunc(x):
 	else:
 		return 1/(1+math.e**(-x))
 
+def fast_activation(x):
+	pass
+	# x is a numpy array
+
 def welp(x):
 	return 2/(1+math.e**-x) - 1
 
@@ -66,6 +72,7 @@ class Brain(object):
 	def __init__(self, number_of_inputs, other_node_sizes, activation_functions = None):
 		self.nodetags = {}
 		if activation_functions == None:
+			#activation_functions = [expit, expit, expit, expit, expit, expit]
 			activation_functions = [afunc, afunc, afunc, afunc, afunc, afunc]
 
 		#[6,5,5,...] with the 6 for the 
@@ -153,21 +160,28 @@ class Brain(object):
 	def compute(self, inp, use_memory = 1):
 		"Take the input nodes and work out what happens at the output"
 		#settings[BRAIN_BIAS]
+		test.add_sticky('bee:update:thinking:compute')
+		test.add_sticky('bee:update:thinking:compute 1')
 		self.nodes[0] = matrix(inp + [settings[BRAIN_BIAS]])
+		test.remove_sticky('bee:update:thinking:compute 1')
+		
 		for i, edges in enumerate(self._all_edges):
+			test.add_sticky('bee:update:thinking:compute:multiplication')
 			if include_cycles:
 				'''combine current and previous layer'''
+				test.add_sticky('bee:update:thinking:compute:multiplication:appending')
 				g = append( settings[MEMORY_STRENGTH] * use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
+				test.remove_sticky('bee:update:thinking:compute:multiplication:appending')
 				#g = append( use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
-				self.nodes[i + 1] = g*edges
+				dot(g,edges, out=self.nodes[i+1])
+				#self.nodes[i + 1] = g*edges
 			else:
 				g = self.nodes[i]
 				self.nodes[i + 1] = g*edges
-
+			test.remove_sticky('bee:update:thinking:compute:multiplication')
+			test.add_sticky('bee:update:thinking:compute:activation')
 			'''apply activation function'''
-			for k in range(self.nodes[i+1].shape[1]):
-				self.nodes[i+1][0,k] = self.activation_functions[i](self.nodes[i+1][0,k])
-			#self.nodes[i + 1][:] = self.activation_functions[i](self.nodes[i+1][:])
+			expit(self.nodes[i+1], out = self.nodes[i+1])
 			'''
 			#self._thoughts is literally a matrix shaped like a list.
 			#I just want to apply a function and this worked.
@@ -177,6 +191,8 @@ class Brain(object):
 			self._thoughts = list(self._thoughts)
 			#self._thoughts = list(   array(  self.activation_functions[i]( array(self._thoughts) )  )[0]   )
 			'''
+			test.remove_sticky('bee:update:thinking:compute:activation')
+		test.remove_sticky('bee:update:thinking:compute')
 		return array(self.nodes[-1])[0]
 
 	def get2DPoint(self, Point3D, theta):

@@ -109,7 +109,7 @@ class Physical(object):
 
 	def push(self):
 		'''uses volume-based methods to remove the physical from surfaces.'''
-		test.add_sticky("push")
+		test.add_sticky("bee:update:physics:project:push")
 		#wat
 		if not self.grounded or linalg.norm(self.vxy) > 0.2:
 			self.xy += self.vxy*self.dt
@@ -162,12 +162,11 @@ class Physical(object):
 					self.grounded = 1
 				self.normals.append(normalizednormal)
 				self.xy += w '''
-		test.record("yeahbuddy")
-		test.remove_sticky("push")
+		test.remove_sticky("bee:update:physics:project:push")
 
 	def project(self):
 		'''Moves point forward while modifying velocity and grounded information'''
-		test.add_sticky('project')
+		test.add_sticky('bee:update:physics:project')
 		#if self.name == "Harold":
 		#	self.xy += self.vxy*self.dt
 		#	self.push()
@@ -181,7 +180,7 @@ class Physical(object):
 		num_stationary = 0
 
 		self.push()
-		test.remove_sticky("project")
+		test.remove_sticky("bee:update:physics:project")
 		
 	def tiles_that_cover_me(self, radius = -1):
 		if radius < 0:

@@ -24,7 +24,7 @@ def say(message, time = 0, down = 0, surface = 0, color = graphics.outline, size
 		surface = screen
 
 	if size == "big":
-		text = font.render(message, 1, color)
+		text = font.render(message, 1, (255, 100, 0))
 		textpos = text.get_rect(centerx = surface.get_width()/2, top= 20 + down * 50)
 	else:
 		text = smallfont.render(message, 1, color)
