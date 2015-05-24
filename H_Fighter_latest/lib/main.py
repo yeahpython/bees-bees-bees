@@ -28,7 +28,6 @@ import time
 import clicks
 import game_progress
 import familytree
-from numpy import linalg
 from random import choice
 from game_settings import *
 import species_visualization
@@ -90,7 +89,7 @@ def getString(allowed_keys = [], string = "", textpos = 0, message = ""): # Shou
 	disp = pygame.display.get_surface()
 	bg = pygame.Surface((disp.get_width(), disp.get_height()))
 	bg.blit(disp, (0,0))
-	font = pygame.font.Font(None, 30)
+	font = pygame.font.SysFont("Droid Serif", 30)
 	box = 0
 	if textpos:
 		box = textpos
@@ -192,6 +191,8 @@ def waitForKey(key, message = 0):
 	if message:
 		messages.say(message, down = 1)
 	else:
+		print "saying Press " + pygame.key.name(key) +" to exit"
+		print "graphics.outline is", graphics.outline
 		messages.say("Press " + pygame.key.name(key) +" to exit", down = 1)
 	pygame.display.flip()
 	clock = pygame.time.Clock()
@@ -265,6 +266,13 @@ def getChoiceBounded(title, given_options, allowcancel = False):
 	#dest = optiondisplay.get_rect(right = graphics.screen_w - 15, top = 15)
 	dest = optiondisplay.get_rect(centerx = graphics.screen_w/2, centery = graphics.screen_h/2)
 
+	# list out options
+	messages.colorBackground(surface = optiondisplay)
+	messages.say(title, surface = optiondisplay, size = "small")
+	messagecount = 1
+	for choice in options:
+		messagecount = messages.say(choice, down = messagecount, surface = optiondisplay, size = "small")
+
 	while True:
 		if pygame.event.get(pygame.QUIT):
 			print "quit from getChoiceUnbounded"
@@ -273,6 +281,7 @@ def getChoiceBounded(title, given_options, allowcancel = False):
 			return "quit"
 		clicks.get_more_clicks()
 		wet += 1
+
 
 		x,y = pygame.mouse.get_pos()
 
@@ -285,11 +294,11 @@ def getChoiceBounded(title, given_options, allowcancel = False):
 					updateview = 1
 
 		if updateview:
-			messages.colorBackground(surface = optiondisplay)
+			'''messages.colorBackground(surface = optiondisplay)
 			messages.say(title, surface = optiondisplay, size = "small")
 			messagecount = 1
 			for choice in options:
-				messagecount = messages.say(choice, down = messagecount, surface = optiondisplay, size = "small")
+				messagecount = messages.say(choice, down = messagecount, surface = optiondisplay, size = "small")'''
 			disp = pygame.display.get_surface()
 
 			optionx = hborder
@@ -304,7 +313,8 @@ def getChoiceBounded(title, given_options, allowcancel = False):
 
 			disp.blit(selectionimage, (dest.x + 5, dest.y + 35 + currpos * 15))
 
-			pygame.display.flip()
+			#pygame.display.flip()
+			pygame.display.update(dest)
 			updateview = 0
 
 		if clicks.mouseups[0]:
@@ -356,27 +366,35 @@ def getChoiceBounded(title, given_options, allowcancel = False):
 		previous_key_states = key_states[:]
 		pygame.event.pump()
 
-levels = ["5.txt", "1.txt", "ringmap4.txt", "3.txt", "dumb room.txt", "ringmap5.txt", "dumb room.txt"]
 
-files = {
-	"tiny debugger" : 1,
-	"ring map" : 2,
-	"vertical map" : 3,
-	"horizontal map" : 4,
-	"closed ring map" : 5,
-	"walls" : 6,
-	"huge map" : 0,
-}
+import os.path
 
 def enteredlevel(allowcancel = 1):
 	# always allows quit and cancel
-	# deals with cancel and quit elegantly
- 	options = ["tiny debugger", "random map", "ring map", "vertical map", "horizontal map", "huge map", "closed ring map", "walls", "quit"]
 
+	# deals with cancel and quit elegantly
+ 	options = []
+
+ 	choicedict = {}
+
+ 	def myfunc(x, dir_name, filenames):
+		for x in filenames:
+			i = x.rfind(".txt")
+			if i == -1:
+				options.append(x)
+			else:
+				options.append(x[:i])
+				choicedict[x[:i]] = x
+			
+	os.path.walk(os.path.join("data", "rooms"), myfunc, 0)
+	
+	# don't want to accidentally overwrite this
+	options.append("quit")
+	choicedict["quit"] = "quit"
 	choice = getChoiceUnbounded("Select a level:", options, allowcancel = allowcancel)
 
-	if choice in files:
-		return levels[files[choice]]
+	if choice in choicedict:
+		return choicedict[choice]
 	else:
 		return choice
 
@@ -406,7 +424,7 @@ def main_loop():
 
 	clock = pygame.time.Clock()
 	dt=0
-	font = pygame.font.Font(None, 30)
+	font = pygame.font.SysFont("Droid Serif", 30)
 
 	world, t, r = 0, 0, 0
 	
@@ -522,7 +540,6 @@ def main_loop():
 		test.record()
 		world.blit(r.background, (0,0))
 		test.record("blitting background")
-		#world.blit(r.collisionfield, (0,0))
 
 
 		togglers = {
@@ -971,7 +988,6 @@ def main_loop():
 
 
 
-		test.add_sticky('main:late') ##########
 
 		'''
 		test.add_sticky('tree') ##########
@@ -1002,9 +1018,9 @@ def main_loop():
 			myfamilytree.update(r.bees)
 			myfamilytree.draw(screen, (840, 0))
 		'''
-		test.add_sticky('main:late:1') 
+		test.add_sticky('room')
 		r.update() # Necessarily comes afterwards so that the bees can see the player
-		
+		test.remove_sticky('room')
 
 		'''
 		if r.signal_new_tree:
@@ -1013,20 +1029,26 @@ def main_loop():
 
 		test.remove_sticky('tree') ##########
 		'''
-
+		test.add_sticky('camera_update')
 		c.follow_player(dt) # Here so that room knows what to draw
 		c.updatesight()
+		test.remove_sticky('camera_update')
 
-		
+
+
+
+		test.add_sticky('main:drawing')
+		test.add_sticky('main:drawing:test')
 		test.draw(world, r)
-
-		test.add_sticky('bee')
+		test.remove_sticky('main:drawing:test')
+		test.add_sticky('main:drawing:bee')
 		for x in r.bees:
 			x.draw(world)
-		test.remove_sticky('bee')
-
+		test.remove_sticky('main:drawing:bee')
+		test.add_sticky('main:drawing:other')
 		for x in r.food + [p] + r.bullets:
 			x.draw(world)
+		test.remove_sticky('main:drawing:other')
 		
 		# Time
 		dt = clock.tick(120)
@@ -1034,7 +1056,9 @@ def main_loop():
 		dt = min(dt, 45) # Make it seem like a slowed down version of 22fps if necessary
 		#print dt, "this is dt"
 
+		test.add_sticky('main:drawing:camera') 
 		c.draw()
+		test.remove_sticky('main:drawing:camera') 
 		'''
 		seconds = pygame.time.get_ticks() / 1000
 
@@ -1074,19 +1098,18 @@ def main_loop():
 		t.permanent_text.append("[h]: %s help" % ("hide" if settings[SHOW_HELP] else "show"))
 
 		t.draw(screen)'''
-		test.remove_sticky('main:late:1') 
-		test.add_sticky('main:late:displayflip') 
+		test.add_sticky('main:drawing:displayflip') 
 		pygame.display.flip()
-		test.remove_sticky('main:late:displayflip') 
+		test.remove_sticky('main:drawing:displayflip') 
+		test.remove_sticky('main:drawing')
 
 		for phys in r.bees + r.food + [p]:
 			phys.visible = c.can_see(phys)
 
-		test.remove_sticky('main:late')
 
 		test.summarizetimings(test.segs, test.segdescriptors)
-		if framecount % 30 == 0:
-			print int(clock.get_fps()), "fps"
+		#if framecount % 30 == 0:
+		#	print int(clock.get_fps()), "fps"
 		pygame.event.pump()
 
 

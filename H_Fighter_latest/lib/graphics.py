@@ -34,7 +34,7 @@ screen_h = 800
 screen_size = (screen_w, screen_h)
 
 border_thickness = 0
-rightborder_thickness = 600
+rightborder_thickness = 0#600
 
 top_space = border_thickness
 
@@ -80,7 +80,7 @@ elif skin == 4:
 	background = [0,0,0]
 	foreground = [200, 200, 200]
 	outline = [0,0,0]
-	creature = [0,255,0]
+	creature = [255,255,255]
 
 CLEAR_SCREEN = 0
 REDRAW_ROOM = 0

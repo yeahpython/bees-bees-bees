@@ -94,7 +94,8 @@ class SpeciesPlot(object):
 
 		inputs = [0.0,0.0] + [1 - distance for distance in infoz] + [1.0]
 
-		downup, rightleft = bee.brain.compute(inputs, use_memory = 0)
+
+		downup, rightleft = array(bee.brain.compute(inputs, use_memory = 0))[0]
 		if settings[BRAIN_ACTIVATION] != 1:
 			downup = -2 * downup + 1
 			rightleft = 2 * rightleft - 1

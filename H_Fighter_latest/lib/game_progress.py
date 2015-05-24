@@ -94,7 +94,7 @@ def load_game():
 		print 2,
 		r.collisionfield = pygame.Surface((graphics.world_w, graphics.world_h))
 		print 3,
-		r.pixels = pygame.PixelArray(r.collisionfield)
+		#r.pixels = pygame.PixelArray(r.collisionfield)
 		print 3.5,
 		r.globalize_dimensions()
 		print 4,

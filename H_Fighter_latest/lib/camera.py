@@ -214,7 +214,7 @@ class Camera(object):
 		'''
 
 	def updatesight(self):
-		self.sight = []
+		del self.sight[:]
 		for x in range(-1, 2, 1):
 			for y in range(-1, 2, 1):
 				self.recs[x][y].centerx = self.xy[0,0] + graphics.world_w*x
@@ -239,6 +239,29 @@ class Camera(object):
 
 			pygame.draw.circle(self.w, (255, 255, 255), (int(pos[0,0]), int(pos[0,1])), trackerradius, 1)
 		
-		for x in range(-1, 2, 1):
-			for y in range(-1, 2, 1):
-				self.s.blit(self.w, (graphics.border_thickness, graphics.top_space), self.recs[x][y])
+
+		xmin = -(int(self.xy[0,0] + graphics.screen_w/2) / graphics.world_w)
+		ymin = -(int(self.xy[0,1] + graphics.screen_h/2) / graphics.world_h)
+
+		# the minimum value of x such that self.xy[0,0] + graphics.world_w*x + graphics.screen_w/2 > 0
+		# i.e. the camera window is still over the world
+
+		xmax = int(graphics.world_w - (self.xy[0,0] - graphics.screen_w/2) ) / graphics.world_w
+		ymax = int(graphics.world_h - (self.xy[0,1] - graphics.screen_h/2) ) / graphics.world_h
+		# the maximum value of x such that self.xy[0,0] + graphics.world_w*x - graphics.screen_w/2 < graphics.world_w
+
+		for x in range(xmin, xmax + 1):
+			for y in range(ymin, ymax + 1):
+				r = pygame.Rect( (0,0), graphics.disp_size)
+				r.centerx = self.xy[0,0] + graphics.world_w*x
+				r.centery = self.xy[0,1] + graphics.world_h*y
+				self.s.blit(self.w, (graphics.border_thickness, graphics.top_space), r)
+
+		#for x in range(-1, 2):
+		#	for y in range(-1, 2):
+		#		self.s.blit(self.w, (graphics.border_thickness, graphics.top_space), self.recs[x][y])
+
+
+
+
+

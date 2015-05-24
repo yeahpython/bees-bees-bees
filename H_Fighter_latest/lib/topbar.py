@@ -2,7 +2,7 @@ import pygame
 from numpy import linalg, matrix, array
 import graphics
 
-font = pygame.font.Font(None, 20)
+font = pygame.font.SysFont("Droif Serif", 20)
 
 info_c = [255,100,55]
 

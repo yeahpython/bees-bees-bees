@@ -44,6 +44,7 @@ stickylabels = []
 
 frames = [0]
 
+
 def clear_tests():
 	sides = []
 	vectors = [(0,0), (0,0)]
@@ -63,15 +64,21 @@ def begin_timing(segs, segdescriptors):
 def record(*args):
 	'''this will register the time between the last call to record and this overlap_line
 	as being spent on args'''
+	if frames[0] % 30:
+		return
 	segs.append(time.time())
 	segdescriptors.append(args)
 	segdescriptors[-1] = segdescriptors[-1] + tuple(stickylabels)
 
 def add_sticky(*args):
+	if frames[0] % 30:
+		return
 	record()
 	stickylabels.extend(args)
 
 def remove_sticky(*args):
+	if frames[0] % 30:
+		return
 	record()
 	for label in args:
 		stickylabels.remove(label)
@@ -85,7 +92,6 @@ def decorator(x):
 		return x[1], -x[0]
 
 def summarizetimings(segs, segdescriptors):
-	frames[0] += 1
 	if SHOW_TEXT and not frames[0] % 30:
 		record("end")
 
@@ -149,7 +155,7 @@ def summarizetimings(segs, segdescriptors):
 			#n_stars = int(v) * total_stars / 100
 			#print (total_stars-n_stars)*" " + n_stars*("*"),
 			print stardict[k],
-			print "%3d" % v,
+			print "%4.1f" % v,
 			i = string.rfind(k, ":")
 			if i != -1:
 				if (k[:i]) in totaldict:
@@ -158,10 +164,9 @@ def summarizetimings(segs, segdescriptors):
 					print k[:i]+bcolors.OKGREEN + k[i:]+ bcolors.ENDC
 			else:
 				print bcolors.OKGREEN+ k+ bcolors.ENDC
-
-
 	segs = []
 	segdescriptors = []
+	frames[0] += 1
 
 def normtuple(x,y):
 	return (x**2 + y**2)
@@ -298,7 +303,7 @@ def draw(surface, room):
 
 	for x,y in tiles:
 		try:
-			r = pygame.Rect(x*bw, y*bh,bw,bh)
+			r = pygame.Rect(x*bw, y*bh,bw+1,bh+1)
 			#room.dirtyareas.append(r)
 			if SHOW_TILES:
 				pygame.draw.rect(surface, (0, 0, 255), r, 1)

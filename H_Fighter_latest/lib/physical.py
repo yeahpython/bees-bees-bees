@@ -109,9 +109,11 @@ class Physical(object):
 
 	def push(self):
 		'''uses volume-based methods to remove the physical from surfaces.'''
-		test.add_sticky("bee:update:physics:project:push")
+		prefix = "bee:update:physics:project:push"
+		test.add_sticky(prefix)
+		test.add_sticky(prefix+":preliminaries")
 		#wat
-		if not self.grounded or linalg.norm(self.vxy) > 0.2:
+		if not self.grounded or self.vxy[0,0]**2 + self.vxy[0,1]**2 > 0.2:
 			self.xy += self.vxy*self.dt
 		r = 0
 		if self.kind == "player":
@@ -127,21 +129,26 @@ class Physical(object):
 		#r = -1
 		#corners = 0
 
-		tiles_to_search = self.tiles_that_cover_me(r)
-		for x,y in tiles_to_search:
+		test.remove_sticky(prefix+":preliminaries")
+		
+		test.add_sticky(prefix+":repel_loop")
+		for x,y in self.tiles_that_cover_me(r):
 			test.tiles.append((x,y))
 			try:
 				c = self.room.convex_directory[x][y]
 			except:
 				continue
 			if c:
-
+				test.add_sticky(prefix+":repel_loop:repel")
 				w = c.repel(circle = self, radius = r, corners = corners)
+				test.remove_sticky(prefix+":repel_loop:repel")
+
 				self.health -= (linalg.norm(w) + 2) / 1000
 				if w[0,1] < -0.1: #and abs(w[0,1]) > 2*abs(w[0,0]):
 					self.grounded = 1
 					self.normals.append(w / linalg.norm(w))
 				self.xy += w
+				
 
 
 				'''test.add_sticky('repel')
@@ -162,7 +169,9 @@ class Physical(object):
 					self.grounded = 1
 				self.normals.append(normalizednormal)
 				self.xy += w '''
-		test.remove_sticky("bee:update:physics:project:push")
+		test.remove_sticky(prefix+":repel_loop")
+		
+		test.remove_sticky(prefix)
 
 	def project(self):
 		'''Moves point forward while modifying velocity and grounded information'''
@@ -185,25 +194,12 @@ class Physical(object):
 	def tiles_that_cover_me(self, radius = -1):
 		if radius < 0:
 			radius = self.radius
-		tiles_to_search = []
-		myleft = (self.xy[0,0] - radius) / bw
-		myright = (self.xy[0,0] + radius) / bw
-		mytop = (self.xy[0,1] - radius) / bh
-		mybottom = (self.xy[0,1] + radius) / bh
+		myleft = int(self.xy[0,0] - radius) / bw
+		myright = int(self.xy[0,0] + radius) / bw
+		mytop = int(self.xy[0,1] - radius) / bh
+		mybottom = int(self.xy[0,1] + radius) / bh
 
-		myleft, myright, mytop, mybottom = int(myleft), int(myright), int(mytop), int(mybottom)
-
-		world_tw = graphics.world_w / bw
-		world_th = graphics.world_h / bh
-
-
-		for x in range( myleft, myright + 1):
-			for y in range(mytop, mybottom + 1):
-				#print y, y%world_th
-				#test.tiles.append((x%world_tw, y%world_th))
-				tiles_to_search.append( (x, y) )
-
-		return tiles_to_search
+		return ( (x,y) for x in range(myleft, myright + 1) for y in range(mytop, mybottom + 1))
 
 			
 	def draw(self, surface):

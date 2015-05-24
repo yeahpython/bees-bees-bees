@@ -25,7 +25,7 @@ from game_settings import *
 #cols = None #graphics.world_w / bw
 
 USE_IMAGES = 0
-DRAW_RANDOM_CIRCLES = 0
+DRAW_RANDOM_CIRCLES = 1
 VISUALIZE_MAP_LOAD = 1
 TIME_INITIALIZATION = 0
 
@@ -39,6 +39,7 @@ horizontalbias = 0
 mapcolors = {
 "#": graphics.foreground,
 " ": graphics.background,
+"!": [0,0,255],
 "Q": [255,0,255],
 "E": [0,255,255],
 "Z": [255,255,0],
@@ -181,6 +182,7 @@ def drawpoint(i, j, lines, override = 0):
 	character = lines[i][j]
 	if override:
 		character = override
+
 	color = mapcolors[character]
 
 	if character == "#":
@@ -192,7 +194,7 @@ def drawpoint(i, j, lines, override = 0):
 		centery = m_offset_y + (i+0.5) * m_dy
 		centerx = int(centerx)
 		centery = int(centery)
-		if c != " ":
+		if c != " " and c != "!":
 			pointlist = []
 			if c == "Q":
 				pointlist.append((left, top))
@@ -210,7 +212,9 @@ def drawpoint(i, j, lines, override = 0):
 				pointlist.append((left, bottom))
 				pointlist.append((right, top))
 				pointlist.append((right, bottom))
-
+			else:
+				print "didn't know what to do with character", c
+				return
 			pygame.draw.polygon(pygame.display.get_surface(), [255, 255, 255], pointlist)	
 
 def movecharacter(lines, low, high, rad, i, j):
@@ -273,8 +277,8 @@ def movecharacters(lines, low, high, runs, r):
 		for i in range(rows):
 			for j in range(cols):
 				movecharacter(lines, low, high, r, randrange(rows), randrange(cols))
-			if VISUALIZE_MAP_LOAD:
-				pygame.display.flip()
+			#if VISUALIZE_MAP_LOAD:
+			#	pygame.display.flip()
 
 def randomlymodify(lines):
 	#for i in range(rows):
@@ -603,9 +607,10 @@ class Room(object):
 
 	def pointcheck(self, point):
 		'''check whether or not a given point is solid'''
-		x, y = point
-		x, y = int(x), int(y)
-		x, y = x % self.collisionfield.get_width(),y %self.collisionfield.get_height()
+		x, y = point[0] % self.collisionfield.get_width(),point[1] %self.collisionfield.get_height()
+		if not isinstance(x, int) or not isinstance(y, int):
+			print "watch out, pointcheck wants the inputs to be integers!"
+			print "type(", x, ")", "aint an integer, it's", type(x)
 		#coloratpoint = self.collisionfield.get_at((x, y))
 		return bool(self.pixels[x, y])
 
@@ -628,7 +633,7 @@ class Room(object):
 				end = array(side.side[1])[0]
 				end = [x - 0.05*y for (x,y) in zip(end, n)]
 
-				font = pygame.font.Font(None, 15)
+				font = pygame.font.SysFont("Droid Serif", 15)
 				text = font.render(str(i), 1, (255, 255, 255))
 				textpos = text.get_rect(centerx = (start[0] + end[0])/2, centery = (start[1] + end[1])/2)
 				self.sidelabels.append([start,end,text,textpos])
@@ -954,42 +959,79 @@ class Room(object):
 				y0 %= rows
 				r = random.random()*graphics.bw*2
 				#r = random.random()*graphics.bw * (1 + 0.12*self.density[x0][y0])
-				red = min(27*self.density[x0][y0] + random.random() * 30, 255)
-				green = min(50*self.density[x0][y0] + 30 + random.random() * 20, 255)
-				blue = min(13*self.density[x0][y0] + 30 + random.random() * 20, 255)
+				red = min(1*self.density[x0][y0] + random.random() * 10, 255)
+				green = min(1*self.density[x0][y0] + 0 + random.random() * 20, 255)
+				blue = min(3*self.density[x0][y0] + 3 + random.random() * 20, 255)
 				c = (red, green, blue)
 				for a in range(-1,2,1):
 					for b in range(-1,2,1):
 						pygame.draw.circle(surface, c, [int(x) + a * graphics.world_w, int(y) + b*graphics.world_h], int(r))
 						#box = pygame.Rect(int(x) - r, int(y) - r, 2*r, 2*r)
 						#pygame.draw.rect(surface, c, box, 0)
+			for t in range(10000):
+				x = random.randrange(-100, surface.get_width(), 1)
+				y = random.randrange(-100, surface.get_height(), 1)
+				dx = random.randrange(-4, 5, 1)
+				dy = random.randrange(-4, 5, 1)
+				surface.blit(surface, (x,y, 100, 100), (x+dx, y+dy, 100, 100))
 			
 		#for x in range(cols):
 		#	for y in range(rows):
 		#		r = pygame.Rect(x*bw, y*bh, bw, bh)
 		#		pygame.draw.rect(surface, [min(27*self.density[x][y] + random.random() * 100, 255)]*3, r)
 		if collision_only:
-			tilecolor = [255,255,255]
+			tilecolor = [0,0,1]
 		else:
 			tilecolor = graphics.foreground
 
 		'''Tiles'''
-		for x in range(cols):
-			for y in range(rows):
-				this_tile = self.tiles[x][y] # For each tile
-				if this_tile.name != 'empty':
-					if USE_IMAGES:
-						surface.blit(this_tile.surface, (x*bw, y*bh)) # Blit image
+		if collision_only:
+			for x in range(cols):
+				for y in range(rows):
+					this_tile = self.tiles[x][y] # For each tile
+					if this_tile.name =='empty':
+						continue
 					else:
 						if not this_tile.pointlist:
 							continue
 						pointlist = [ (x*bw + x0, y*bh +y0) for x0, y0 in this_tile.pointlist] # Draw shape
-						g = len(self.side_directory[x][y])
-						if collision_only:
-							pygame.draw.polygon(surface, tilecolor, pointlist)
+						pygame.draw.polygon(surface, tilecolor, pointlist)
+						
+		else:
+			for x in range(cols):
+				power = 15
+				for y in [Y % rows for Y in range(10 * rows)]:
+					rand = random.random()
+					if rand > 0.95:
+						x += 1
+						x %= cols
+					if rand < 0.05:
+						x -= 1
+						x %= cols
+					this_tile = self.tiles[x][y] # For each tile
+					if this_tile.name =='empty':
+						power = 15
+					elif this_tile.name == 'start':
+						pass
+					else:
+						if this_tile.name in ['bottomleft', 'bottomright'] or self.tiles[(x+1) % cols][(y-1)%rows].name =='empty' or self.tiles[(x-1) % cols][(y-1)%rows].name =='empty':
+							power = 15
+						if USE_IMAGES:
+							surface.blit(this_tile.surface, (x*bw, y*bh)) # Blit image
 						else:
-							pygame.draw.polygon(surface, graphics.foreground, pointlist)
-						#pygame.draw.polygon(surface, [ 255 - min(random.random()*150 + self.density[x][y] * 20, 255) for k in graphics.foreground], pointlist)
+							if not this_tile.pointlist:
+								continue
+							pointlist = [ (x*bw + x0, y*bh +y0) for x0, y0 in this_tile.pointlist] # Draw shape
+							#g = len(self.side_directory[x][y])
+							#if collision_only:
+							#	pygame.draw.polygon(surface, tilecolor, pointlist)
+							#else:
+							#	pygame.draw.polygon(surface, graphics.foreground, pointlist)
+							pygame.draw.polygon(surface, [ 100 + 10 * power for k in graphics.foreground, 0, 255], pointlist)
+							if power > 0:
+								power -= 1
+
+
 
 		'''Sides'''
 		if not collision_only:
@@ -1001,7 +1043,7 @@ class Room(object):
 				#end = [x - 0.05*y for (x,y) in zip(end, n)]
 
 
-				font = pygame.font.Font(None, 15)
+				font = pygame.font.SysFont("Droid Serif", 15)
 				text = font.render(str(i), 1, (255, 255, 255))
 				textpos = text.get_rect(centerx = (start[0] + end[0])/2, centery = (start[1] + end[1])/2)
 

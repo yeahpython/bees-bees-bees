@@ -51,7 +51,7 @@ airresist = 0.000002
 friction = 0.0000001
 speed_decay = 0.998
 
-tinyfont = pygame.font.Font(None, 12)
+tinyfont = pygame.font.SysFont("Droid Serif", 12)
 
 STALK_CAMERA = False
 ALTERNATE_EYES = True
@@ -90,7 +90,7 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(11, [15, 15, 2])
+			self.brain = brain.Brain(11+36-8, [15, 15, 2])
 		self.radius = radius
 		self.health = settings[MAX_HEALTH]
 		self.color = color
@@ -136,7 +136,7 @@ class Bee(physical.Physical):
 		self.children = 0
 		self.ancestry = (random.randrange(0, 1000000),)
 		self.score = 0
-		self.outputs = [0.5, 0.5, 0.5, 0.5]
+		self.outputs = matrix([0.5, 0.5, 0.5, 0.5])
 		self.player = "lol"
 		self.room.beehistory += 1
 		self.bullets = []
@@ -159,9 +159,13 @@ class Bee(physical.Physical):
 		self.prevrank = 30
 		self.request_family_tree_update = 0
 		self.rank = 30
-		d = 25
+		d = 100
 		if not eyepoints:
-			self.eyepoints = [(random.choice(range(-d, d+1)), random.choice(range(-d,d+1))) for x in range(numeyepoints)]
+			#self.eyepoints = [(random.choice(range(-d, d+1)), random.choice(range(-d,d+1))) for x in range(numeyepoints)]
+			#self.eyepoints = [ (x,y) for x in range(-d,d+1,40) for y in range(-d,d+1,40)]
+			step = 20
+			self.eyepoints = [ ((20 + 5 * i) *math.cos(129 * i), (20 + 5 * i) * math.sin(129 * i) ) for i in range(36)]
+			self.eyepoints = [(int(x), int(y)) for x,y in self.eyepoints]
 		else:
 			self.eyepoints = copy.deepcopy(eyepoints)
 
@@ -280,7 +284,10 @@ class Bee(physical.Physical):
 			#c = int(self.xy[0,0] / bw) % graphics.world_tw
 			#r = int(self.xy[0,1] / bh) % graphics.world_th
 
-			if self.room.pointcheck(array(self.xy)[0]):
+			if self.room.pointcheck(array(self.xy).astype(int)[0]):
+				px = int((offset + self.player.xy)[0,0]) % graphics.world_w
+				py = int((offset + self.player.xy)[0,1]) % graphics.world_h
+				#pygame.draw.circle(surface, [255,0,0], (px, py), 10)
 				continue
 
 			for x in range(steps):
@@ -428,7 +435,7 @@ class Bee(physical.Physical):
 			self.timesincelastthought -= self.responsetime
 
 			infoz = 0
-			use_complex_vision = True
+			use_complex_vision = False
 			if use_complex_vision:
 				c = int(self.xy[0,0] / bw)
 				r = int(self.xy[0,1] / bw)
@@ -437,7 +444,9 @@ class Bee(physical.Physical):
 				test.record("bee:update:thinking:inputs:vision")
 			else:
 				test.record()
-				infoz = [self.room.pointcheck((self.xy[0,0] + eye_x, self.xy[0,1] + eye_y)) for eye_x, eye_y in self.eyepoints]
+				a = int(self.xy[0,0])
+				b = int(self.xy[0,1])
+				infoz = [self.room.pointcheck((a + eye_x, b + eye_y)) for eye_x, eye_y in self.eyepoints]
 				test.record("bee:update:thinking:inputs:pointchecks")
 
 			#go = time.time()
@@ -459,15 +468,15 @@ class Bee(physical.Physical):
 
 			test.remove_sticky("bee:update:thinking:inputs:2")
 			test.add_sticky("bee:update:thinking:inputs:2.5")
-			player_sight_range = 50
-			disp_to_p /= player_sight_range
+			player_sight_scale = 0.02
+			disp_to_p *= player_sight_scale
 			dist = linalg.norm(disp_to_p)
 
 			sharpness = 1
 			radius = 2
 
 			if dist > 0:
-				disp_to_p *= settings[SENSITIVITY_TO_PLAYER] * (1 / (1 + 2 ** (sharpness *(dist - radius)) )) / dist
+				disp_to_p *= settings[SENSITIVITY_TO_PLAYER] / (dist * (1 + 2 ** (sharpness *(dist - radius)) ))
 
 			#tweaked_disp *= self.sensitivity
 
@@ -485,20 +494,23 @@ class Bee(physical.Physical):
 
 
 			
-			inputs = disps + [1 - distance for distance in infoz] + [self.health / settings[MAX_HEALTH]] # 1 
+			inputs = disps + [1 - distance for distance in infoz] + [self.health / settings[MAX_HEALTH]] # 1
+
+
 			test.remove_sticky("bee:update:thinking:inputs:3")
 			#inputs += [self.friends[0,0], self.friends[0,1], self.friendsrelpos[0,0], self.friendsrelpos[0,1]] # 4
 			
 			test.remove_sticky("bee:update:thinking:inputs")
 
 			test.add_sticky("bee:update:thinking:compute")
+			# Note: output is now a matrix!
 			self.outputs = outputs = self.brain.compute(inputs)
 			test.remove_sticky("bee:update:thinking:compute")
 			test.add_sticky("bee:update:thinking:outputs")
 
-			self.up = 2 * outputs[0] - 1
+			self.up = 2 * outputs[0,0] - 1
 			#down = outputs[1]
-			self.leftright = 2 * outputs[1] - 1
+			self.leftright = 2 * outputs[0,1] - 1
 			#print linalg.norm(self.vxy)
 
 			self.color = self.room.painter.get_color(self)
@@ -523,11 +535,13 @@ class Bee(physical.Physical):
 			
 
 		test.add_sticky("bee:update:physics")
+
+		test.add_sticky("bee:update:physics:basicmovement")
 		if settings[CREATURE_MODE] == 0:
 			'''bees'''
 			self.vxy += gravity*dt
 			self.dvxy = self.up*jumpvel*dt + self.leftright*yogroundacc*dt
-			self.vxy += self.dvxy * dt
+			self.vxy += dt * self.dvxy
 			self.vxy *= speed_decay**dt
 		else:
 			'''fleas'''
@@ -557,15 +571,19 @@ class Bee(physical.Physical):
 		#collision testing and further modification of position and velocity
 		self.grounded = 0
 		num_deflections = 0
-		self.normals = []
-
+		del self.normals[:]
+		test.remove_sticky("bee:update:physics:basicmovement")
 		self.project() # This will consume dt
+
+		test.add_sticky("bee:update:physics:worldwrap")
 
 		#stay in the box
 		self.xy[0,0] = self.xy[0,0]%graphics.world_w
 		self.xy[0,1] = self.xy[0,1]%graphics.world_h
 
+		test.remove_sticky("bee:update:physics:worldwrap")
 
+		test.add_sticky("bee:update:physics:teleport")
 		#maybe teleport back
 		if allow_randomize and self.room.pointcheck((int(self.xy[0,0]), int(self.xy[0,1]))):
 			if (self.lastnonwall[0,0] < 0):
@@ -576,6 +594,7 @@ class Bee(physical.Physical):
 				self.vxy *= -1
 		else:
 			self.lastnonwall = self.xy * 1
+		test.remove_sticky("bee:update:physics:teleport")
 
 		test.remove_sticky("bee:update:physics")
 		self.age()
@@ -720,7 +739,8 @@ class Bee(physical.Physical):
 
 		r = max(settings[EYE_MUTATION_RANGE], 0)
 		R = range(-r, r+1)
-		self.eyepoints = [(x + random.choice(R), y + random.choice(R)) for x,y in self.eyepoints]
+		#should be integers
+		#self.eyepoints = [(x + random.choice(R), y + random.choice(R)) for x,y in self.eyepoints]
 		self.update_eyes()
 
 	def findplayer(self,p):
@@ -756,20 +776,24 @@ class Bee(physical.Physical):
 		if 0 and settings[SHOW_EYES]:
 			box = self.decoration.get_rect(x = self.xy[0,0] + self.eyedrawingoffset[0], y = self.xy[0,1] + self.eyedrawingoffset[1])
 			surface.blit(self.decoration, box, special_flags = pygame.BLEND_ADD)
+		if settings[SHOW_EYES]:
+			for x,y in self.eyepoints:
+				ixy = self.xy.astype(int)
+				X = ixy[0,0] + x
+				Y = ixy[0,1] + y
+				#X %= surface.get_width()
+				#Y %= surface.get_height()
 
-			'''for x,y in self.eyepoints:
-													ixy = self.xy.astype(int)
-													X = ixy[0,0] + x
-													Y = ixy[0,1] + y
-													X %= surface.get_width()
-													Y %= surface.get_height()
-									
-													surface.set_at((X,Y), graphics.outline)'''
+				#if abs(X - ixy[0,0]) > 500 or abs(Y - ixy[0,1]) > 100:
+				#	continue
+
+				#surface.set_at((X,Y), graphics.outline)
+				pygame.draw.line(surface, self.color, array(self.xy)[0], (X,Y), 1)
 
 		start = self.xy
 		end = self.prevpos
 
-		'''this is here to trip you up'''
+		'''this is here to make things trippy'''
 		if abs(start[0,0] - end[0,0]) < 100:
 			if abs(start[0,1] - end[0,1]) < 100:
 				if self.madness == 1:
@@ -834,6 +858,14 @@ class Bee(physical.Physical):
 					pygame.draw.line(surface, regularcolor, (px-r2,py-r2), (px+r2, py+r2), 1)
 				else:
 					pygame.draw.line(surface, regularcolor, (px+r2,py-r2), (px-r2, py+r2), 1)
+			elif settings[BEE_STYLE] == 2:
+				#self.dvxy = matrix([0.0,0.0])
+				rotation = self.dvxy[0,0] * 600
+				
+				dx = math.cos(rotation)
+				dy = math.sin(rotation)
+				dx, dy = 4 * dx, 4 * dy
+				pygame.draw.line(surface, [255, 255, 255], (px+dx,py+dy), (px-dx, py-dy), 3)
 			else:
 				radius = 1 + int(self.radius*self.health)
 				if (radius < 1):

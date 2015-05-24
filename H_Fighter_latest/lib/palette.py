@@ -1,4 +1,5 @@
-
+import test
+from numpy import array
 
 class Palette(object):
 	def __init__(self):
@@ -7,7 +8,8 @@ class Palette(object):
 		self.scaling = [1.0, 1.0, 1.0, 1.0]
 	
 	def renew_coloring_rule(self, bees, speed = 0.1):
-		x = zip(*[b.outputs for b in bees])
+		test.add_sticky("palette")
+		x = zip(*[array(b.outputs)[0] for b in bees])
 		newmax = [max(x[i]) for i in range(2)]
 		newmin = [min(x[i]) for i in range(2)]
 		for i in range(2):
@@ -16,17 +18,22 @@ class Palette(object):
 			self.min[i] *= (1-speed)
 			self.min[i] += speed * newmin[i]
 		self.scaling = [1.0 / (abs(M- m) + 0.01) for M, m in zip(self.max, self.min)]
+		test.remove_sticky("palette")
 
 	def get_color(self, b):
+		test.record()
 		try:
-			outputs = b.outputs[:]
+			outputs = array(b.outputs)[0]
 			for i in range(2):
 				outputs[i] = (outputs[i] - self.min[i]) * self.scaling[i]
 			color = [outputs[0], outputs[1], outputs[1] - outputs[0]]
 			color = [min(i, 1) for i in color]
 			color = [max(i, 0) for i in color]
 			color = [int(50 + i * 205) for i in color]
+			test.record("palette")
 			return color
 		except:
 			print "palette error"
+			test.record("palette")
 			return (255, 255, 255)
+		

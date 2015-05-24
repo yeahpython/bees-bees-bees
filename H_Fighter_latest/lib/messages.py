@@ -2,8 +2,8 @@ import pygame
 import graphics
 
 pygame.init()
-font = pygame.font.Font(None, 50)
-smallfont = pygame.font.Font(None, 20)
+font = pygame.font.SysFont("Droid Serif", 50)
+smallfont = pygame.font.SysFont("Droid Serif", 12)
 
 screen = None
 
@@ -16,7 +16,9 @@ def colorBackground(surface = 0):
 		screen.fill(graphics.foreground)
 		pygame.display.flip()
 
-def say(message, time = 0, down = 0, surface = 0, color = graphics.outline, size = "big"):
+def say(message, time = 0, down = 0, surface = 0, color = None, size = "big"):
+	if color == None:
+		color = graphics.outline
 	text = 0
 	textpos = 0
 
@@ -24,7 +26,7 @@ def say(message, time = 0, down = 0, surface = 0, color = graphics.outline, size
 		surface = screen
 
 	if size == "big":
-		text = font.render(message, 1, (255, 100, 0))
+		text = font.render(message, 1, color)
 		textpos = text.get_rect(centerx = surface.get_width()/2, top= 20 + down * 50)
 	else:
 		text = smallfont.render(message, 1, color)
