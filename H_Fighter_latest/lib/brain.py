@@ -15,76 +15,17 @@ from game_settings import *
 from scipy.special import expit
 
 font = pygame.font.SysFont("Droid Serif", 30)
-
-
-'''
-force = 0.5
-specialforcerules = {
-						"wall above right" : matrix([force, -force, -force]),
-						"wall below right" : matrix([force, force, -force]),
-						"wall above left" : matrix([-force, -force, -force]),
-						"wall below left" : matrix([-force, force, -force]),
-						"go up" : matrix([0, -force, force]),
-						"go down" : matrix([0, force, force]),
-						"go left" : matrix([-force, 0, force]),
-						"go right" : matrix([force, 0, force]),
-						}
-
-for message in specialforcerules:
-	specialforcerules[message][0,2] *= 2
-
-#specialforcerules["wall above right"] = matrix([force,-force, 0])
-#specialforcerules["wall below right"= matrix([force,force, 0]),
-
-
-off = 2000
-specialdrawinglines = {
-						"wall above right" : [off, -off],
-						"wall below right" : [off, off],
-						"wall above left" : [-off, -off],
-						"wall below left" : [-off, off],
-						"go up" : [0, -off],
-						"go down" : [0, off],
-						"go left" : [-off, 0],
-						"go right" : [off, 0],
-						}
-'''
-
-
-include_cycles = False	
-
-def afunc(x):
-	if settings[BRAIN_ACTIVATION] == 1:
-		return x / 10
-	elif settings[BRAIN_ACTIVATION] == 2:
-		return x > 0
-	else:
-		return 1/(1+math.e**(-x))
-
-def welp(x):
-	return 2/(1+math.e**-x) - 1
-
+include_cycles = False
 
 class Brain(object):
-	def __init__(self, number_of_inputs, other_node_sizes, activation_functions = None):
+	def __init__(self, number_of_inputs, other_node_sizes):
 		self.nodetags = {}
-
-		if activation_functions:
-			self.activation_functions = activation_functions
-		else:
-			#activation_functions = [expit, expit, expit, expit, expit, expit]
-			self.activation_functions = [afunc, afunc, afunc, afunc, afunc, afunc]
-
 		self._layer_sizes = [number_of_inputs + 1] + other_node_sizes
-		
 		self.nodes = None
 		self.randomizenodes()
-
 		self._all_edges = None
 		self.randomizeconnections()
-
 		self.mutationrate = [30,30,30]
-
 
 	def randomizenodes(self):
 		self.nodes = [ matrix(np.random.random( (1, layer_size) ) - 0.5) for layer_size in self._layer_sizes]
@@ -93,11 +34,6 @@ class Brain(object):
 		self._all_edges = []
 		for first, second in zip(self._layer_sizes, self._layer_sizes[1:]):
 			self._all_edges.append(matrix(10 * np.random.random((first + include_cycles * second, second)) - 5))
-		'''for layer in self._all_edges:
-			s = layer.shape
-			for r in range(s[0]):
-				for c in range(s[1]):
-					layer[r,c] = random.random()*10 - 5'''
 
 	def loadinputs(self, inp):
 		for i in range(len(inp)):
@@ -105,24 +41,17 @@ class Brain(object):
 
 	def compute(self, inp, use_memory = 1):
 		prefix = 'bee:update:thinking:compute:'
-		"Take the input nodes and work out what happens at the output"
-		#settings[BRAIN_BIAS]
-		add_sticky(prefix + "1")
+		add_sticky(prefix + "loadinputs")
 		self.loadinputs(inp + [settings[BRAIN_BIAS]])
-		#self.nodes[0] = matrix(inp + [settings[BRAIN_BIAS]])
-		remove_sticky(prefix + "1")
-		
-		
+		remove_sticky(prefix + "loadinputs")
 		for i, edges in enumerate(self._all_edges):
 			add_sticky(prefix + 'multiplication')
 			if include_cycles:
 				'''combine current and previous layer'''
 				add_sticky(prefix + 'multiplication:appending')
-				g = append( settings[MEMORY_STRENGTH] * use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
+				g = append( (settings[MEMORY_STRENGTH] * use_memory) * self.nodes[i+1], self.nodes[i], axis = 1)
 				remove_sticky(prefix + 'multiplication:appending')
-				#g = append( use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
 				dot(g,edges, out=self.nodes[i+1])
-				#self.nodes[i + 1] = g*edges
 			else:
 				dot(self.nodes[i], edges, out=self.nodes[i+1])
 			remove_sticky(prefix + 'multiplication')
@@ -133,7 +62,6 @@ class Brain(object):
 		return self.nodes[-1] #output is now a matrix; used to be a list
 
 	def mutate(self):
-		#print self._all_edges
 		for layer in self._all_edges:
 			s = layer.shape
 			for r in range(s[0]):
@@ -201,7 +129,6 @@ class Brain(object):
 						sec = array(locations[(i+1,j2)] / scalefactor - translation)[0] * 1
 
 
-						#v = 2*afunc(layer[j1, j2]) - 1
 						v = layer[j1, j2]
 						color = 0
 						if v > 0:
@@ -667,7 +594,6 @@ def get_connection_strength_range(edges):
 		s = layer.shape
 		for j1 in range(s[0]):
 			for j2 in range(s[1]):
-				#weight = 2*afunc(layer[j1, j2]) - 1
 				weight = layer[j1, j2]
 				if weight > 0:
 					maxconnection = max(weight, maxconnection)
