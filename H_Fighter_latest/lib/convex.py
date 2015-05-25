@@ -46,10 +46,20 @@ class Convex(object):
 		'''
 
 		# remove parallels from the normals
-		betternormals = no_parallels2(normals, vector_slope)
+		#betternormals = no_parallels2(normals, vector_slope)
+
+		#print "betternormals are", betternormals
 
 		# tells you the shadow of itself after you project it along each normal
-		self.shadowDict = find_shadows(betternormals, self.points)
+		#self.shadowDict = find_shadows(betternormals, self.points)
+
+		# there should be one normal per side plus one for every extra side
+		#self.shadowDict = find_shadows(normals, self.points)
+
+		# this is (-inf, max point shadow distance ) for each normal
+		self.shadowDict = find_shadows_2(normals, self.points)
+
+
 
 		# 
 		self.use = {p:0 for p in self.points}
@@ -99,7 +109,8 @@ class Convex(object):
 		else:
 			other_ns = [k for k in other.shadowDict]
 		
-		ns_to_consider = no_parallels2(my_ns + other_ns, vector_slope)
+		ns_to_consider = my_ns + other_ns
+		#ns_to_consider = no_parallels2(my_ns + other_ns, vector_slope)
 		test.remove_sticky(prefix+":normals")
 
 
@@ -146,6 +157,7 @@ class Convex(object):
 		test.remove_sticky(prefix+":displacements")
 
 		'''pick the shortest displacement'''
+		disps = filter(lambda (normal, distance): abs(distance) != float('infinity'), disps)
 		if disps:
 			for n,m in disps:
 				push = m * n
@@ -166,6 +178,7 @@ class Convex(object):
 			test.record(prefix+":no collision")
 			return x
 
+lenient = True
 def find_shadows(normals, points):
 	'''makes a dictionarys of normals to shadows'''
 	d = {}
@@ -175,7 +188,8 @@ def find_shadows(normals, points):
 			q = p*n.T
 			t.append(q[0,0])
 
-		if len(t) > 1:
+		# when lenient, extranormals work
+		if not lenient and len(t) > 1:
 			t.sort()
 			mi = -float('infinity')
 			ma = float('infinity')
@@ -183,10 +197,37 @@ def find_shadows(normals, points):
 				mi = t[0]
 			if abs(t[-1] - t[-2]) < 1:
 				ma = t[-1]
-			#d[n] = min(t), max(t)
 			d[n] = mi, ma
+			#d[n] = min(t), max(t)
+			
 		else:
 			d[n] = min(t), max(t)
+	return d
+
+
+def find_shadows_2(normals, points):
+	'''makes a dictionarys of normals to shadows'''
+	d = {}
+	for n in normals:
+		t = []
+		for p in points:
+			q = p*n.T
+			t.append(q[0,0])
+
+		# when lenient, extranormals work
+		if not lenient and len(t) > 1:
+			t.sort()
+			mi = -float('infinity')
+			ma = float('infinity')
+			if abs(t[0] - t[1]) < 1: #only count shadows if two things are against it
+				mi = t[0]
+			if abs(t[-1] - t[-2]) < 1:
+				ma = t[-1]
+			d[n] = mi, ma
+			#d[n] = min(t), max(t)
+			
+		else:
+			d[n] = -float('infinity'), max(t)
 	return d
 
 

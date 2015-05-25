@@ -327,7 +327,7 @@ def getChoiceBounded(title, given_options, allowcancel = False):
 				disp.blit(bg, (0,0))
 				return "cancel"
 
-		clock.tick(60)
+		clock.tick(60) 
 
 		'''stupid mac...'''
 		#key_presses = pygame.event.get()
@@ -1049,7 +1049,7 @@ def main_loop():
 		test.remove_sticky('main:drawing:other')
 		
 		# Time
-		dt = clock.tick(120)
+		dt = clock.tick(120) # used to be 120
 
 		dt = min(dt, 45) # Make it seem like a slowed down version of 22fps if necessary
 		#print dt, "this is dt"

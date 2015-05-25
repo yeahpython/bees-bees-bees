@@ -89,7 +89,7 @@ class Physical(object):
 		self.objectsinview = self.room.object_directory[x%graphics.world_tw][y%graphics.world_th]
 		for c,r in self.tiles_that_cover_me():
 			self.room.object_directory[c%graphics.world_tw][r%graphics.world_th].append(self)
-			test.tiles.append((c,r))
+			#test.tiles.append((c,r))
 
 		#if not self.visible and ignoreinvisible:
 		#	return
@@ -142,12 +142,21 @@ class Physical(object):
 				test.add_sticky(prefix+":repel_loop:repel")
 				w = c.repel(circle = self, radius = r, corners = corners)
 				test.remove_sticky(prefix+":repel_loop:repel")
+				if linalg.norm(w) > 0:
+					test.tiles.append((x,y))
 
 				self.health -= (linalg.norm(w) + 2) / 1000
 				if w[0,1] < -0.1: #and abs(w[0,1]) > 2*abs(w[0,0]):
 					self.grounded = 1
-					self.normals.append(w / linalg.norm(w))
+					l = linalg.norm(w)
+					assert l != 0
+					assert not math.isnan(l)
+					assert l not in (float('infinity'), -float('infinity'))
+					self.normals.append(w / l)
+				p1 = (int(self.xy[0,0]), int(self.xy[0,1]) )
 				self.xy += w
+				p2 = (int(self.xy[0,0]), int(self.xy[0,1]) )
+				test.lines.append((p1, p2))
 				
 
 

@@ -649,6 +649,9 @@ class Bee(physical.Physical):
 				self.vxy *= -1
 		else:
 			self.lastnonwall = self.xy * 1
+		if linalg.norm(self.prevpos - self.xy) < 200:
+			test.lines.append( ( (int(self.prevpos[0,0]), int(self.prevpos[0,1]) ), (int(self.xy[0,0]), int(self.xy[0,1]) ) ) )
+
 		test.remove_sticky("bee:update:physics:teleport")
 
 		test.remove_sticky("bee:update:physics")

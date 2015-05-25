@@ -33,6 +33,7 @@ class Bullet(physical.Physical):
 		self.randomize_position()
 		self.radius = 20
 		self.kind = "bullet"
+		self.age = 0
 		print "bullet initiated!"
 
 	def disappear(self):
@@ -60,6 +61,9 @@ class Bullet(physical.Physical):
 
 	def update(self, dt, key_states, key_presses):
 		super(Bullet, self).update(dt, key_states, key_presses)
+		self.age += dt
+		if self.age > 10000:
+			self.disappear()
 
 		for phys in self.objectsinview:
 			#if phys.kind == "player":

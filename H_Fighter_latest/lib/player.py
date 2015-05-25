@@ -3,7 +3,7 @@ import pygame
 import graphics
 import math
 import collision
-from numpy import linalg, matrix, array
+from numpy import linalg, matrix, array, nditer
 import numpy
 import test
 import itertools
@@ -58,6 +58,7 @@ class Player(physical.Physical):
 		self.automaticEvasion = 0
 		self.jetpackfuel = 0
 		self.going_right = 1
+		self.airtime = 0
 
 	def maybe_die(self):
 		if self.radius < 10:
@@ -128,6 +129,7 @@ class Player(physical.Physical):
 		
 
 		if key_states[pygame.K_UP]:
+			self.lastnormal = None
 			if self.feetSupported:
 				self.jetpackfuel = 200
 				self.vxy += jumpvel
@@ -228,6 +230,14 @@ class Player(physical.Physical):
 		num_deflections = 0
 		self.normals = []
 		self.project() # This will consume dt
+		if self.grounded:
+			self.airtime = 0
+		else:
+			self.airtime += 1
+			if self.airtime > 5:
+				self.lastnormal = None
+
+		assert all(val not in [float('infinity'), float('-infinity')] for val in nditer(self.xy))
 		
 		#stay in the box
 		self.xy[0,0] = self.xy[0,0]%graphics.world_w
@@ -413,8 +423,10 @@ class Player(physical.Physical):
 			if self.normals:
 				self.lastnormal = self.normals[0]
 			n = self.lastnormal
+
+			n_valid = (n!= None) and all(not math.isnan(t) for t in nditer(n))
 			try:
-				if n != None:
+				if n_valid:
 					head = rotate_tuple(head, n, (px, py) )
 					shoulders = rotate_tuple(shoulders, n, (px, py) )
 					groin = rotate_tuple(groin, n, (px, py) )
@@ -423,23 +435,32 @@ class Player(physical.Physical):
 					lefthand = rotate_tuple(lefthand, n, (px, py) )
 					righthand = rotate_tuple(righthand, n, (px, py) )
 				
-
-
+				assert all(not math.isnan(t) for t in head)
 				pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
 				
 				'''neck'''
+				assert all(not math.isnan(t) for t in shoulders)
 				pygame.draw.line(surface, color, head, shoulders, 2)
 
 				'''torso'''
+				assert all(not math.isnan(t) for t in groin)
 				pygame.draw.line(surface, color, shoulders, groin, 2)
 
-
+				assert all(not math.isnan(t) for t in rightfoot)
 				pygame.draw.line(surface, color, groin, rightfoot, 2)
+
+				assert all(not math.isnan(t) for t in leftfoot)
 				pygame.draw.line(surface, color, groin, leftfoot, 2)
+
+				assert all(not math.isnan(t) for t in righthand)
 				pygame.draw.line(surface, color, shoulders, righthand, 2)
+
+				assert all(not math.isnan(t) for t in lefthand)
 				pygame.draw.line(surface, color, shoulders, lefthand, 2)
 			except:
-				print "body drawing failure"
+				print "body drawing failure with",
+				print "normal: ", n,
+				print "others:", head, shoulders, groin, leftfoot, rightfoot, lefthand, righthand
 
 			ffcolor = [255, 255, 255]
 			#if self.losinghealth:
@@ -481,6 +502,7 @@ def rotate_tuple(original, normal, center):
 		return int(c1 - x1), int(c2 - y1)
 	except:
 		print "whoops, rotate_tuple failed."
+		print original, normal, center
 		return original
 
 

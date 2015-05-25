@@ -32,8 +32,9 @@ backgroundpointmarkers = []
 SHOW_SIDES = 0
 SHOW_VECTORS = 0
 SHOW_INDICATORS = 0
-SHOW_LINES = 0
-SHOW_TILES = 0
+SHOW_LINES = 1
+LINE_MEMORY = 5
+SHOW_TILES = 1
 SHOW_BACKGROUND_MARKERS = 1
 SHOW_TEXT = 1
 
@@ -273,6 +274,10 @@ def draw(surface, room):
 
 	if SHOW_LINES:
 		for p1, p2 in lines:
+			pygame.draw.line(surface, (0,255,0), p1, p2, 1)
+		lines = []
+		'''
+		for p1, p2 in lines:
 			w = []
 			for x in range(-1, 2, 1):
 				for y in range(-1, 2, 1):
@@ -286,25 +291,24 @@ def draw(surface, room):
 				a = normtuple(p2[0]-p1[0], p2[1]-p1[1])
 				if a == g:
 					try:
-						"""
-						a,b = p1
-						a = max(a, -10000)
-						a = min(a, 10000)
-						b = max(b, -10000)
-						b = min(b, 10000)
-						p1 = a,b
+						# a,b = p1
+						# a = max(a, -10000)
+						# a = min(a, 10000)
+						# b = max(b, -10000)
+						# b = min(b, 10000)
+						# p1 = a,b
 
-						a,b = p2
-						a = max(a, -10000)
-						a = min(a, 10000)
-						b = max(b, -10000)
-						b = min(b, 10000)
-						p2 = a,b
-						"""
-						pygame.draw.line(surface, (255,0,0), p1, p2, 1)
+						# a,b = p2
+						# a = max(a, -10000)
+						# a = min(a, 10000)
+						# b = max(b, -10000)
+						# b = min(b, 10000)
+						# p2 = a,b
+						pygame.draw.line(surface, (0,255,0), p1, p2, 1)
 					except:
 						print "bad bad bad"
-	lines = lines[-100:]
+		lines = lines[-LINE_MEMORY:]
+		'''
 
 	for x,y in tiles:
 		try:

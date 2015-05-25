@@ -543,9 +543,13 @@ class Room(object):
 				extranormals = []
 
 				if adj_string not in ["   ######", "#########", "Z  ######", "#  ######", "  #######"]:
-					if (above in "Z#" and right in "Z#") or (below in "E#" and left in "E#"):
+					if above in "Z#" and right in "Z#" and adj_string[2] in " QEC":
 						extranormals.append(matrix([1,-1]))
-					if (above in "C#" and left in "C#") or (below in "Q#" and right in "Q#"):
+					if below in "E#" and left in "E#" and adj_string[6] in " QZC":
+						extranormals.append(matrix([-1,1]))
+					if above in "C#" and left in "C#" and adj_string[0] in " QZE":
+						extranormals.append(matrix([-1,-1]))
+					if below in "Q#" and right in "Q#" and adj_string[8] in " ZCE":
 						extranormals.append(matrix([1,1]))
 
 				a = convex.Convex(mps, offset, extranormals)
@@ -604,7 +608,7 @@ class Room(object):
 
 			#print "found", pointcounter, "points"
 
-
+		'''elimating overlapping normals'''
 		self.adjust_convexes()
 
 		if TIME_INITIALIZATION: print "convexes took", time.time() - convexstarttime, "seconds"
@@ -645,254 +649,74 @@ class Room(object):
 
 	def adjust_convexes(self):
 		'''modifies shadows and deactivates sides as necessary to improve collision testing'''
+		optimize = True
 
-		known_side_mods = {}
+		if optimize:
 
-		dirs = {}
-		dirs[(0, 1)] = "right"
-		dirs[(0, -1)] = "left"
-		dirs[(1, 0)] = "bottom"
-		dirs[(-1,0)] = "top"
+			known_side_mods = {}
 
-		'''side modification'''
-		for x in range(cols):
-			for y in range(rows):
-				'''want to kill some sides of this shape'''
-				c = self.convex_directory[x][y]
-				if not c:
-					continue
+			dirs = {}
+			dirs[(0, 1)] = "right"
+			dirs[(0, -1)] = "left"
+			dirs[(1, 0)] = "bottom"
+			dirs[(-1,0)] = "top"
 
-				for x0, y0 in dirs:
-					'''check each neighbor for stickiness'''
-					xo = x + x0
-					yo = y + y0
-					given = (self.tiles[x][y].name, self.tiles[xo%cols][yo%rows].name, dirs[(x0,y0)])
-					co = self.convex_directory[xo][yo]
-					if not co:
+			'''side modification'''
+			for x in range(cols):
+				for y in range(rows):
+					'''want to kill some sides of this shape'''
+					c = self.convex_directory[x][y]
+					if not c:
 						continue
 
-
-
-					'''
-					READ FROM THE PRECOMPUTED STUFF
-					'''
-
-					if given in known_side_mods:
-						result = known_side_mods[given][:]
-					else:
-						result = []
-						sticky_normal = None
-						sticky_count = 0
-						number_same = 0
-
-						possnorms = c.shadowDict.keys()
-
-						for k in co.shadowDict.keys():
-							for j in possnorms:
-								if numpy.array_equal(k,j):
-									break
-							else:
-								possnorms.append(k)
-
-						for n in possnorms: # Counting sticky edges
-							'''for all shadows'''
-							try:
-								small, big =  c.shadowDict[n]
-							except:
-								small, big = convex.find_shadows([n], c.points)[n]
-
-							try:
-								so, bo =  co.shadowDict[n]
-							except:
-								so, bo = convex.find_shadows([n], co.points)[n]
-
-							'''see if they stick'''
-							if big == so:
-								sticky_normal = n, 'bigso', (small, float('infinity')), (-float('infinity'), bo)
-								sticky_count += 1
-							elif small == bo:
-								sticky_normal = n, 'smallbo', (so, float('infinity')), (-float('infinity'), big)
-								sticky_count += 1
-
-						if sticky_count == 1: # Modify result
-							swap = 0
-							left, right = 0,0
-							if sticky_normal[1] == 'bigso':
-								left, right = c, co
-							elif sticky_normal[1] == 'smallbo':
-								left, right = co, c
-								swap = 1
-							else:
-								print "what the hell?"
-								continue
-
-							n = sticky_normal[0]
-							result = [n, swap]
-						
-						known_side_mods[given] = result
-						#print "{0} to the {1} of {2} gives {3}".format(given[1], given[2], given[0], result)
-
-					#print "result was", result
-
-					if result:
-						#if x == y == 1:
-						#	print result, c.shadowDict
-						#if given in known_side_mods:
-						#	result2 = known_side_mods[given]
-						#	if any([linalg.norm(x-y) == 0 for x,y in zip(result, result2)]):
-						#		print "strange", result, result2
-
-						n = result[0]
-						swap = result[1]
-						if swap:
-							left,right = co, c
-						else:
-							left,right = c, co
-
-
-						for m in left.shadowDict:
-							if linalg.norm(n-m) == 0:
-								left.shadowDict[m] = left.shadowDict[m][0], float('infinity')
-						for m in right.shadowDict:
-							if linalg.norm(n-m) == 0:
-								right.shadowDict[m] = -float('infinity'), right.shadowDict[m][1]
-					
-				d = {}
-
-
-				for n, r in c.shadowDict.iteritems():
-					if r != (-float('infinity'), float('infinity')):
-						d[n] = r
-
-				c.shadowDict = d
-
-		known_point_mods = {}
-
-		'''point modification'''
-		'''
-		for x in range(cols):
-			for y in range(rows):
-				c = self.convex_directory[x][y]
-				if not c: continue
-				for p in c.points:
-					ex,ey = p[0,0],p[0,1]
-					l = math.ceil(ex/bw) - 1
-					r = math.floor(ex/bw)
-					t = math.ceil(ey/bh) - 1
-					b = math.floor(ey/bh)
-
-					l = int(l)
-					r = int(r)
-					t = int(t)
-					b = int(b)
-
-					mx = int(ex/bw)
-					my = int(ey/bh)
-
-					if l == r or t == b:
-						continue
-
-					#test.backgroundmarkers.append(( (ex,ey), ((l+0.5)*bw, (t+0.5)*bh)))
-					#test.backgroundmarkers.append(( (ex,ey), ((r+0.5)*bw, (t+0.5)*bh)))
-					#test.backgroundmarkers.append(( (ex,ey), ((l+0.5)*bw, (b+0.5)*bh)))
-					#test.backgroundmarkers.append(( (ex,ey), ((r+0.5)*bw, (b+0.5)*bh)))
-					#test.backgroundmarkers.append(( (ex,ey), (ex-5, ey+5)))
-
-					v = h = 0
-
-					if l == mx:
-						h = r
-					else:
-						h = l
-
-					if t == my:
-						v = b
-					else:
-						v = t
-
-					concount = 0
-					cons = []
-					for posx in range(l, r+1):
-						for posy in range(t, b+1):
-							cons.append(self.convex_directory[posx][posy])
-					#cons = [self.convex_directory[posx][posy] for posx,posy in [(l,t),(r,t),(l,b),(r,b)]]
-
-
-					try:
-						vert = self.convex_directory[mx][v]
-						horiz = self.convex_directory[h][my]
-						diag = self.convex_directory[h][v]
-					except:
-						print "bad", ex,ey,mx,v
-						continue
-
-					weird = []
-					foo = [c, horiz, diag, vert]
-					for con in foo:
-						if not con:
-							weird.append(0)
-						else:
-							for q in con.points:
-								if numpy.allclose(p,q):
-									weird.append(1)
-									break
-							else:
-								weird.append(0)
-
-					if len(weird) != 4:
-						print "tile list 'weird' is of wrong lenth,", len(weird)
-
-					remove = [0,0,0,0]
-					p_remove = [0,0,0,0]
-					# we want to remove a point.
-					# if it's never used.
-					#     It's completely surrounded
-					#     The adjacent sides will always push better
-
-					if sum(weird) == 2:
-						remove = weird # Imprecise
-						p_remove = weird
-					elif sum(weird) == 4:
-						remove = weird # Incorrect for wedges
-						p_remove = weird # Incorrect for wedges
-					elif sum(weird) == 3:
-						remove = p_remove = [weird[i-2] for i in range(4)]
-						#remove is inefficient because we make all tiles push
-
-					for i, k in enumerate(foo):
-						if k:
-							if remove[i] and p in k.use:
-								k.use[p] = 0
-							if p_remove[i] and p in k.use_pointwise:
-								k.use_pointwise[p] = 0
-		'''
+					for x0, y0 in dirs:
+						'''check each neighbor for stickiness'''
+						xo = x + x0
+						yo = y + y0
+						co = self.convex_directory[xo][yo]
+						if not co:
+							continue
+						for normal in c.shadowDict:
+							for other_normal in co.shadowDict:
+								if linalg.norm(other_normal + normal) < 0.1:
+									# if there is an opposing normal
+									if c.shadowDict[normal][1] + co.shadowDict[other_normal][1] < 0.1:
+										c.shadowDict[normal] = c.shadowDict[normal][0], float('infinity')
+										co.shadowDict[other_normal] = co.shadowDict[other_normal][0], float('infinity')
+			for row, entries in enumerate(self.convex_directory):
+				for col, c in enumerate(entries):
+					if c != None:
+						d = {}
+						for n, r in c.shadowDict.iteritems():
+							if r != (-float('infinity'), float('infinity')):
+								d[n] = r
+						c.shadowDict = d
 
 
 		'''deleting convexes and drawing testlines'''
-		wolo = 0
 		for x in range(cols):
 			for y in range(rows):
 				c = self.convex_directory[x][y]
 				if not c:
 					continue
-				if not c.shadowDict and all([v == 0 for k,v in c.use.iteritems()]):
+				if not c.shadowDict and all([use == False for point, use in c.use.iteritems()]):
 					self.convex_directory[x][y] = None
 				else:
-					'''draw normal'''
+					'''draw normals'''
+					ex, ey = (x + 0.5)*bw, (y + 0.5)*bh
 					for n in c.shadowDict:
-						ex, ey = (x + 0.5)*bw, (y + 0.5)*bh
 						mi, ma = c.shadowDict[n]
 						if ma != float('infinity'):
 							test.backgroundmarkers.append(( (ex,ey), (ex+10*n[0,0], ey+10*n[0,1])))
-						if mi != -float('infinity'):
-							test.backgroundmarkers.append(( (ex,ey), (ex-10*n[0,0], ey-10*n[0,1])))
+						#if mi != -float('infinity'):
+						#	test.backgroundmarkers.append(( (ex,ey), (ex-10*n[0,0], ey-10*n[0,1])))
 
 					'''draw corner'''
 					for k,v in c.use.iteritems():
 						if v:
-							wolo += 1
-							ex, ey = k[0,0], k[0,1]
-							test.backgroundpointmarkers.append((ex, ey))
+							#ex, ey = k[0,0], k[0,1]
+							test.backgroundmarkers.append(( (ex,ey), (k[0,0], k[0,1])))
+							#test.backgroundpointmarkers.append((ex, ey))
 
 					'''draw box'''
 					p = ( (x+0.4)*bw, (y+0.4)*bh)
