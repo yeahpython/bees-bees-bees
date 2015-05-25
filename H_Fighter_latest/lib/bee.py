@@ -13,6 +13,7 @@ import random
 import time
 import copy
 import bullet
+import complexbrain
 
 import food
 import physical
@@ -91,7 +92,8 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(11+36-8+2, [2])
+			#self.brain = brain.Brain(11+36-8+2, [2])
+			self.brain = complexbrain.ComplexBrain(11+36-8+2, 15, 2)
 		self.radius = radius
 		self.health = settings[MAX_HEALTH]
 		self.color = color
@@ -237,7 +239,8 @@ class Bee(physical.Physical):
 		self.slow = 1
 		original_position = self.xy * 1
 		original_health = self.health
-		original_nodes = copy.deepcopy(self.brain.nodes)
+		#original_nodes = copy.deepcopy(self.brain.nodes)
+		#original_clusters = copy.deepcopy(self.brain.clusters)
 		'''
 		pygame.draw.circle(surface, (0, 0, 255), (int(self.xy[0,0]), int(self.xy[0,1])), 10, 2)
 		a = 30
@@ -544,7 +547,16 @@ class Bee(physical.Physical):
 
 			test.add_sticky("bee:update:thinking:compute")
 			# Note: output is now a matrix!
-			self.outputs = outputs = self.brain.compute(inputs)
+
+			#print inputs
+			#self.brain.set_inputs(matrix(inputs))
+			self.brain.compute(inputs)
+			outputs = matrix([0.0,0.0])
+			self.brain.get_outputs(outputs)
+
+			self.outputs = outputs[:,:] + 0
+
+			#self.outputs = outputs = self.brain.compute(inputs)
 			test.remove_sticky("bee:update:thinking:compute")
 			test.add_sticky("bee:update:thinking:outputs")
 			self.up = 2 * outputs[0,0] - 1

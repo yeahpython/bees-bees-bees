@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import matrix, dot, nditer
+from numpy import matrix, dot, nditer, zeros
 from scipy.special import expit
 # class representing a more modular kind of brain.
 
@@ -12,6 +12,7 @@ MULTIPLY_ROW = 2
 
 # Fixed names of cluster nodes
 CLUSTER_INPUT = 0
+CLUSTER_INTERMEDIATE = 1
 CLUSTER_OUTPUT = -1
 
 
@@ -23,7 +24,7 @@ class ComputationUnit(object):
 		# output is a string-size tuple
 		self.input_info = input_info
 		self.output_name, self.output_size = self.output_info = output_info
-		self.matrices = { name:matrix((self.output_size, input_size)) for (name,input_size) in self.input_info}
+		self.matrices = { name:matrix(zeros( (input_size, self.output_size) ) ) for (name,input_size) in self.input_info}
 		for i in range(30):
 			self.mutate()
 
@@ -43,23 +44,23 @@ class ComputationUnit(object):
 			dot( input_vector, self.matrices[input_name], out = output_multiply_vector)
 			# add
 			output_add_vector += output_multiply_vector
-
 		# apply sigmoid function
 		output_final_vector = clusters[self.output_name][FINAL_ROW,:]	
 		expit(output_add_vector, out = output_final_vector)
 
 	def mutate(self):
 		for n, m in self.matrices.iteritems():
-			m += 0.1 * np.random.random(m.size) - 0.05
+			self.matrices[n] += 2 * np.random.random(m.shape) - 1
 
 class ComplexBrain(object):
-	def __init__(self, n_inputs, n_outputs):
+	def __init__(self, n_inputs, n_hidden, n_outputs):
+		self.nodetags = {} # here for code compatibility only
 		self.n_inputs = n_inputs
-		self.n_hidden = 10
-		self.n_outputs = self.n_outputs
-		self.clusters = {CLUSTER_INPUT:matrix((N_BLOCKS,self.n_inputs)),
-		                 CLUSTER_INTERMEDIATE:matrix((N_BLOCKS, self.n_hidden)),
-		                 CLUSTER_OUTPUT:matrix((N_BLOCKS,self.n_inputs))}
+		self.n_hidden = n_hidden
+		self.n_outputs = n_outputs
+		self.clusters = {CLUSTER_INPUT:matrix( zeros( (N_BLOCKS,self.n_inputs))),
+		                 CLUSTER_INTERMEDIATE:matrix( zeros((N_BLOCKS, self.n_hidden))),
+		                 CLUSTER_OUTPUT:matrix(zeros((N_BLOCKS,self.n_outputs)))}
 		
 		unit_1 = ComputationUnit([(CLUSTER_INPUT       , self.n_inputs)], (CLUSTER_INTERMEDIATE, self.n_hidden))
 		unit_2 = ComputationUnit([(CLUSTER_INTERMEDIATE, self.n_hidden)], (CLUSTER_OUTPUT      , self.n_outputs))
@@ -67,9 +68,14 @@ class ComplexBrain(object):
 		self.computation_units = [unit_1, unit_2]
 
 	def set_inputs(self, inputs):
-		self.clusters[CLUSTER_INPUT][FINAL_ROW,:] = inputs[:,:]
+		self.clusters[CLUSTER_INPUT][FINAL_ROW,:] = inputs[0,:]
+
+	def randomizenodes(self): # here for code compatibility
+		for name, vector in self.clusters.iteritems():
+			vector += 1 * np.random.random(vector.shape) - 0.5
 
 	def compute(self, inputs):
+		self.set_inputs(matrix(inputs))
 		for comp_unit in self.computation_units:
 			comp_unit.compute(self.clusters)
 
