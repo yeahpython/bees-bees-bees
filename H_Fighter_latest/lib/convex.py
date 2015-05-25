@@ -174,7 +174,19 @@ def find_shadows(normals, points):
 		for p in points:
 			q = p*n.T
 			t.append(q[0,0])
-		d[n] = min(t), max(t)
+
+		if len(t) > 1:
+			t.sort()
+			mi = -float('infinity')
+			ma = float('infinity')
+			if abs(t[0] - t[1]) < 1: #only count shadows if two things are against it
+				mi = t[0]
+			if abs(t[-1] - t[-2]) < 1:
+				ma = t[-1]
+			#d[n] = min(t), max(t)
+			d[n] = mi, ma
+		else:
+			d[n] = min(t), max(t)
 	return d
 
 

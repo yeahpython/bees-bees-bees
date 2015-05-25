@@ -521,6 +521,7 @@ class Room(object):
 
 
 				adjacents = []
+				adj_string = ""
 				for di in range(-1, 2):
 					#thisline = ""
 					r2 = (r + di) % rows
@@ -531,6 +532,7 @@ class Room(object):
 						#thisline += "]"
 						if (di + dj) % 2 == 1:
 							adjacents.append(self.lines[r2][c2])
+						adj_string += self.lines[r2][c2]
 					#print thisline
 
 				above = adjacents[0]
@@ -539,10 +541,12 @@ class Room(object):
 				below = adjacents[3]
 
 				extranormals = []
-				if (above in "Z#" and right in "Z#") or (below in "E#" and left in "E#"):
-					extranormals.append(matrix([1,-1]))
-				if (above in "C#" and left in "C#") or (below in "Q#" and right in "Q#"):
-					extranormals.append(matrix([1,1]))
+
+				if adj_string not in ["   ######", "#########", "Z  ######", "#  ######", "  #######"]:
+					if (above in "Z#" and right in "Z#") or (below in "E#" and left in "E#"):
+						extranormals.append(matrix([1,-1]))
+					if (above in "C#" and left in "C#") or (below in "Q#" and right in "Q#"):
+						extranormals.append(matrix([1,1]))
 
 				a = convex.Convex(mps, offset, extranormals)
 				a.name = self.tiles[c%cols][r%rows].name
@@ -606,7 +610,7 @@ class Room(object):
 		if TIME_INITIALIZATION: print "convexes took", time.time() - convexstarttime, "seconds"
 
 	def pointcheck(self, point):
-		'''true if given tuple (x,y) is solid'''
+		'''true if given tuple is solid'''
 		x, y = point[0] % self.collisionfield.get_width(),point[1] %self.collisionfield.get_height()
 		if not isinstance(x, int) or not isinstance(y, int):
 			print "watch out, pointcheck wants the inputs to be integers!"
@@ -879,7 +883,7 @@ class Room(object):
 						ex, ey = (x + 0.5)*bw, (y + 0.5)*bh
 						mi, ma = c.shadowDict[n]
 						if ma != float('infinity'):
-							test.backgroundmarkers.append(( (ex,ey), (ex+int(-ma)*n[0,0], ey+int(-ma)*n[0,1])))
+							test.backgroundmarkers.append(( (ex,ey), (ex+10*n[0,0], ey+10*n[0,1])))
 						if mi != -float('infinity'):
 							test.backgroundmarkers.append(( (ex,ey), (ex-10*n[0,0], ey-10*n[0,1])))
 

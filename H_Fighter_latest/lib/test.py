@@ -111,7 +111,10 @@ def summarizetimings(segs, segdescriptors):
 				try:
 					totaldict[key] += w[i] / total * 100
 				except:
-					totaldict[key] = w[i] / total * 100
+					try:
+						totaldict[key] = w[i] / total * 100
+					except:
+						print "error: probably accidentally forgot to close a sticky label or something"
 
 		wolo = []
 

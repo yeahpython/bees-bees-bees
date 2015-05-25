@@ -48,6 +48,7 @@ class Player(physical.Physical):
 		self.place(self.room.start_position)
 		self.room.player = self
 		self.feetSupported = 0
+		self.lastnormal = None
 		self.lefta = 0.5
 		self.righta = 0.5
 		self.beepushes = []
@@ -289,7 +290,7 @@ class Player(physical.Physical):
 		for x,y in utils.body_copies(self.xy, self.radius):
 			px = ixy[0,0] + x*graphics.world_w
 			py = ixy[0,1] + y*graphics.world_h
-			pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
+			#pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
 
 			pi = 3.1415926
 
@@ -410,27 +411,35 @@ class Player(physical.Physical):
 
 
 			if self.normals:
-				head = rotate_tuple(head, self.normals[0], (px, py) )
-				shoulders = rotate_tuple(shoulders, self.normals[0], (px, py) )
-				groin = rotate_tuple(groin, self.normals[0], (px, py) )
-				leftfoot = rotate_tuple(leftfoot, self.normals[0], (px, py) )
-				rightfoot = rotate_tuple(rightfoot, self.normals[0], (px, py) )
-				lefthand = rotate_tuple(lefthand, self.normals[0], (px, py) )
-				righthand = rotate_tuple(righthand, self.normals[0], (px, py) )
-
-			pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
-			
-			'''neck'''
-			pygame.draw.line(surface, color, head, shoulders, 2)
-
-			'''torso'''
-			pygame.draw.line(surface, color, shoulders, groin, 2)
+				self.lastnormal = self.normals[0]
+			n = self.lastnormal
+			try:
+				if n != None:
+					head = rotate_tuple(head, n, (px, py) )
+					shoulders = rotate_tuple(shoulders, n, (px, py) )
+					groin = rotate_tuple(groin, n, (px, py) )
+					leftfoot = rotate_tuple(leftfoot, n, (px, py) )
+					rightfoot = rotate_tuple(rightfoot, n, (px, py) )
+					lefthand = rotate_tuple(lefthand, n, (px, py) )
+					righthand = rotate_tuple(righthand, n, (px, py) )
+				
 
 
-			pygame.draw.line(surface, color, groin, rightfoot, 2)
-			pygame.draw.line(surface, color, groin, leftfoot, 2)
-			pygame.draw.line(surface, color, shoulders, righthand, 2)
-			pygame.draw.line(surface, color, shoulders, lefthand, 2)
+				pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
+				
+				'''neck'''
+				pygame.draw.line(surface, color, head, shoulders, 2)
+
+				'''torso'''
+				pygame.draw.line(surface, color, shoulders, groin, 2)
+
+
+				pygame.draw.line(surface, color, groin, rightfoot, 2)
+				pygame.draw.line(surface, color, groin, leftfoot, 2)
+				pygame.draw.line(surface, color, shoulders, righthand, 2)
+				pygame.draw.line(surface, color, shoulders, lefthand, 2)
+			except:
+				print "body drawing failure"
 
 			ffcolor = [255, 255, 255]
 			#if self.losinghealth:
@@ -468,7 +477,11 @@ def rotate_tuple(original, normal, center):
 	x1 -= x * normal[0,1]
 	y1 += x * normal[0,0]
 
-	return int(c1 - x1), int(c2 - y1)
+	try:
+		return int(c1 - x1), int(c2 - y1)
+	except:
+		print "whoops, rotate_tuple failed."
+		return original
 
 
 
