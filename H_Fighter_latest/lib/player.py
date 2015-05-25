@@ -71,7 +71,7 @@ class Player(physical.Physical):
 			#self.prevrad = 40
 
 	def shoot(self):
-		b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix([0.8 * self.going_right, 0.0]))
+		b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix([0.4 * self.going_right, 0.0]))
 		#b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix(0.1 * numpy.random.random((1,2)) - 0.05))
 		b.xy = self.xy * 1
 		self.room.bullets.append(b)
@@ -255,6 +255,9 @@ class Player(physical.Physical):
 				self.radius +=0.1
 				f.vxy += (f.xy - self.xy)/linalg.norm(f.xy - self.xy)
 
+	
+
+
 	def draw(self, surface):
 		test.add_sticky('player')
 		test.add_sticky('draw player')
@@ -324,7 +327,9 @@ class Player(physical.Physical):
 			#heady -= offsety/2
 
 			head = int(headx), int(heady)
-			pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
+
+			
+			
 
 			'''groin'''
 			groinx = px
@@ -335,11 +340,8 @@ class Player(physical.Physical):
 
 			groin = (groinx, groiny)
 
-			'''neck'''
-			pygame.draw.line(surface, color, head, shoulders, 2)
 
-			'''torso'''
-			pygame.draw.line(surface, color, shoulders, groin, 2)
+
 
 
 			'''right leg'''
@@ -353,7 +355,7 @@ class Player(physical.Physical):
 					step *= abs(self.offset[0,1]*5 + 1)
 					rightfooty += step
 			rightfoot = rightfootx, rightfooty
-			pygame.draw.line(surface, color, groin, rightfoot, 2)
+			
 			#pygame.draw.line(surface, color, (px,py+int(self.radius*0.2)), (px + self.radius*math.cos(0.4*pi), py+inself.radius*math.sin(0.4*pi)), 1)
 
 			'''left leg'''
@@ -368,7 +370,7 @@ class Player(physical.Physical):
 					leftfooty += step
 			leftfooty = int(leftfooty)
 			leftfoot = leftfootx, leftfooty
-			pygame.draw.line(surface, color, groin, leftfoot, 2)
+			
 
 			rightpoint = px + 0.8 * self.radius, py + 0.8 * self.radius
 			leftpoint = px - 0.8 * self.radius, py + 0.8 * self.radius
@@ -389,7 +391,7 @@ class Player(physical.Physical):
 			righthandy = shouldery + self.radius
 			righthandy -= abs(int(self.offset[0,1] * 5))
 			righthand = (righthandx, righthandy)
-			pygame.draw.line(surface, color, shoulders, righthand, 2)
+			
 
 			'''left arm'''
 			#howfar = 0.7
@@ -402,6 +404,32 @@ class Player(physical.Physical):
 			lefthandy = shouldery + self.radius
 			lefthandy -= abs(int(self.offset[0,1] * 5))
 			lefthand = (lefthandx, lefthandy)
+
+
+
+
+
+			if self.normals:
+				head = rotate_tuple(head, self.normals[0], (px, py) )
+				shoulders = rotate_tuple(shoulders, self.normals[0], (px, py) )
+				groin = rotate_tuple(groin, self.normals[0], (px, py) )
+				leftfoot = rotate_tuple(leftfoot, self.normals[0], (px, py) )
+				rightfoot = rotate_tuple(rightfoot, self.normals[0], (px, py) )
+				lefthand = rotate_tuple(lefthand, self.normals[0], (px, py) )
+				righthand = rotate_tuple(righthand, self.normals[0], (px, py) )
+
+			pygame.draw.circle(surface, color, head, int(self.radius*0.2), 0)
+			
+			'''neck'''
+			pygame.draw.line(surface, color, head, shoulders, 2)
+
+			'''torso'''
+			pygame.draw.line(surface, color, shoulders, groin, 2)
+
+
+			pygame.draw.line(surface, color, groin, rightfoot, 2)
+			pygame.draw.line(surface, color, groin, leftfoot, 2)
+			pygame.draw.line(surface, color, shoulders, righthand, 2)
 			pygame.draw.line(surface, color, shoulders, lefthand, 2)
 
 			ffcolor = [255, 255, 255]
@@ -428,7 +456,19 @@ class Player(physical.Physical):
 
 		self.losinghealth = 0
 
+def rotate_tuple(original, normal, center):
+	x,y = original
+	c1, c2 = center
+	x -= c1
+	y -= c2
+	x1,y1 = 0.0, 0.0
+	x1 += y * normal[0,0]
+	y1 += y * normal[0,1]
 
+	x1 -= x * normal[0,1]
+	y1 += x * normal[0,0]
+
+	return int(c1 - x1), int(c2 - y1)
 
 
 

@@ -17,6 +17,8 @@ CLUSTER_OUTPUT = -1
 
 
 
+
+
 # parametrizes a family of operations on clusters
 class ComputationUnit(object):
 	def __init__(self, input_info, output_info):
@@ -62,10 +64,18 @@ class ComplexBrain(object):
 		                 CLUSTER_INTERMEDIATE:matrix( zeros((N_BLOCKS, self.n_hidden))),
 		                 CLUSTER_OUTPUT:matrix(zeros((N_BLOCKS,self.n_outputs)))}
 		
-		unit_1 = ComputationUnit([(CLUSTER_INPUT       , self.n_inputs)], (CLUSTER_INTERMEDIATE, self.n_hidden))
-		unit_2 = ComputationUnit([(CLUSTER_INTERMEDIATE, self.n_hidden)], (CLUSTER_OUTPUT      , self.n_outputs))
+		#unit_1 = ComputationUnit([(CLUSTER_INPUT       , self.n_inputs)], (CLUSTER_INTERMEDIATE, self.n_hidden))
+		#unit_2 = ComputationUnit([(CLUSTER_INTERMEDIATE, self.n_hidden)], (CLUSTER_OUTPUT      , self.n_outputs))
+
+		unit_1 = self.set_up_unit( (CLUSTER_INPUT, CLUSTER_INTERMEDIATE),CLUSTER_INTERMEDIATE)
+		unit_2 = self.set_up_unit((CLUSTER_INTERMEDIATE,), CLUSTER_OUTPUT)
 
 		self.computation_units = [unit_1, unit_2]
+
+	def set_up_unit(self, input_names, output_name):
+		input_info = [(name, self.clusters[name].shape[1]) for name in input_names]
+		output_info = (output_name, self.clusters[output_name].shape[1])
+		return ComputationUnit(input_info, output_info)
 
 	def set_inputs(self, inputs):
 		self.clusters[CLUSTER_INPUT][FINAL_ROW,:] = inputs[0,:]

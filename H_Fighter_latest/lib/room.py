@@ -879,7 +879,7 @@ class Room(object):
 						ex, ey = (x + 0.5)*bw, (y + 0.5)*bh
 						mi, ma = c.shadowDict[n]
 						if ma != float('infinity'):
-							test.backgroundmarkers.append(( (ex,ey), (ex+10*n[0,0], ey+10*n[0,1])))
+							test.backgroundmarkers.append(( (ex,ey), (ex+int(-ma)*n[0,0], ey+int(-ma)*n[0,1])))
 						if mi != -float('infinity'):
 							test.backgroundmarkers.append(( (ex,ey), (ex-10*n[0,0], ey-10*n[0,1])))
 

@@ -20,7 +20,7 @@ def save_game(r):
 		b.tag = 0#
 		b.objectsinview = []
 	#r.bees =[]
-	#r.deadbees = []
+	r.deadbees = []
 
 	#r.object_directory = [[[] for x in y] for y in r.object_directory]
 	#r.visibles = []

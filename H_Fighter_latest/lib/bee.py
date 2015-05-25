@@ -95,6 +95,7 @@ class Bee(physical.Physical):
 			#self.brain = brain.Brain(11+36-8+2, [2])
 			self.brain = complexbrain.ComplexBrain(11+36-8+2, 15, 2)
 		self.radius = radius
+		self.see_bullet = False
 		self.health = settings[MAX_HEALTH]
 		self.color = color
 		self.treecolor = [randrange(256), randrange(256), randrange(256)]
@@ -447,7 +448,7 @@ class Bee(physical.Physical):
 			LIDAR = 1
 			POINTCHECK = 2
 			TILES = 3
-			vision_mode = POINTCHECK
+			vision_mode = TILES
 			if vision_mode == LIDAR:
 				c = int(self.xy[0,0] / bw)
 				r = int(self.xy[0,1] / bw)
@@ -466,6 +467,7 @@ class Bee(physical.Physical):
 				a = int(self.xy[0,0])
 				b = int(self.xy[0,1])
 				points_to_check = ((a + eye_x, b + eye_y) for eye_x, eye_y in self.eyepoints)
+				self.see_bullet = False
 				for i, (x,y) in enumerate(points_to_check):
 					c = int(x / bw)
 					r = int(y / bh)
@@ -473,6 +475,8 @@ class Bee(physical.Physical):
 					g = i % 2
 					if g == 0:
 						infoz.append (any(other.kind=="bullet" for other in objects))
+						if infoz[-1]:
+							self.see_bullet = True
 					else:
 						infoz.append(self.room.pointcheck((x,y)))
 						# walls
@@ -925,7 +929,10 @@ class Bee(physical.Physical):
 					self.flash = 25
 				if self.flash < 0:
 					self.flash = 0
-				pygame.draw.line(surface, [255 - 25 * self.flash, 255, 255 - 25 * self.flash], (px+dx,py+dy), (px-dx, py-dy), 3)
+				c = [255 - 25 * self.flash, 255, 255 - 25 * self.flash]
+				if self.see_bullet:
+					c = [255, 255, 0]
+				pygame.draw.line(surface, c, (px+dx,py+dy), (px-dx, py-dy), 3)
 			else:
 				radius = 1 + int(self.radius*self.health)
 				if (radius < 1):
