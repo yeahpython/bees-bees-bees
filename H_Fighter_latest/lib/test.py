@@ -105,6 +105,8 @@ def summarizetimings(segs, segdescriptors):
 		totaldict = {}
 
 		for i, keys in enumerate(segdescriptors):
+			if i >= len(w):
+				print "error with length", len(segdescriptors), len(w) 
 			for key in keys:
 				try:
 					totaldict[key] += w[i] / total * 100

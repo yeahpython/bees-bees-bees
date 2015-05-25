@@ -19,6 +19,7 @@ import physical
 import brain
 import utils
 from game_settings import *
+from scipy.special import expit
 
 num_best_bees = 10
 madness = 0
@@ -90,7 +91,7 @@ class Bee(physical.Physical):
 		if prebrain != None:
 			self.brain = prebrain
 		else:
-			self.brain = brain.Brain(11+36-8, [15, 15, 2])
+			self.brain = brain.Brain(11+36-8+2, [2])
 		self.radius = radius
 		self.health = settings[MAX_HEALTH]
 		self.color = color
@@ -110,7 +111,7 @@ class Bee(physical.Physical):
 		self.up = 0
 		self.leftright = 0
 		self.dead = 0
-
+		'''
 		tags = []
 		tags += ["dx", "dy"]
 		#tags += ["dvx", "dvy"]
@@ -130,7 +131,7 @@ class Bee(physical.Physical):
 		#						(0,1):"dispy"}
 		#inputs = disps + [dvx, dvy] + [self.health] + infoz + [self.friends[0,0], self.friends[0,1], self.friendsrelpos[0,0], self.friendsrelpos[0,1]]#+ playerinputs + t
 				#2		    #2            #1		  # 4              + 4
-
+				'''
 		self.name = random_surname()
 		self.firstname = random_name()
 		self.children = 0
@@ -164,11 +165,12 @@ class Bee(physical.Physical):
 			#self.eyepoints = [(random.choice(range(-d, d+1)), random.choice(range(-d,d+1))) for x in range(numeyepoints)]
 			#self.eyepoints = [ (x,y) for x in range(-d,d+1,40) for y in range(-d,d+1,40)]
 			step = 20
-			self.eyepoints = [ ((20 + 5 * i) *math.cos(129 * i), (20 + 5 * i) * math.sin(129 * i) ) for i in range(36)]
+			#self.eyepoints = [ ((20 + 5 * i) *math.cos(129 * i), (20 + 5 * i) * math.sin(129 * i) ) for i in range(15)]
+			self.eyepoints = [ ((70 + 3 * i) *math.cos(3.141592 * 0.13 * i), (70 + 3 * i) * math.sin(3.141592 * 0.13 * i) ) for i in range(36)]
 			self.eyepoints = [(int(x), int(y)) for x,y in self.eyepoints]
 		else:
 			self.eyepoints = copy.deepcopy(eyepoints)
-
+		self.brain.labels = []
 		self.update_eyes()
 		#self.a = 1
 
@@ -267,6 +269,10 @@ class Bee(physical.Physical):
 
 				if not 40 < linalg.norm(offset) < simradius:
 					continue
+				if abs(offset[0,0]) > graphics.world_w / 2:
+					continue
+				if abs(offset[0,1]) > graphics.world_h / 2:
+					continue 
 				points.append(offset)
 
 		random.shuffle(points)
@@ -411,7 +417,7 @@ class Bee(physical.Physical):
 		self.friends*=0.9
 		self.friendsrelpos*=0.9
 		for p in self.objectsinview:
-			if 0 and p.kind == "bullet":
+			if p.kind == "bullet":
 				p.hit_bee(self)
 			elif p.name != self.name and settings[SWARMING_PEER_PRESSURE] and p.kind == "bee":
 				othervel = p.vxy - self.vxy
@@ -434,20 +440,41 @@ class Bee(physical.Physical):
 			test.record()
 			self.timesincelastthought -= self.responsetime
 
-			infoz = 0
-			use_complex_vision = False
-			if use_complex_vision:
+			infoz = None
+			LIDAR = 1
+			POINTCHECK = 2
+			TILES = 3
+			vision_mode = POINTCHECK
+			if vision_mode == LIDAR:
 				c = int(self.xy[0,0] / bw)
 				r = int(self.xy[0,1] / bw)
 				infoz = self.room.visiondirectory[c%graphics.world_tw][r%graphics.world_th]
 				self.wallproximities = infoz
 				test.record("bee:update:thinking:inputs:vision")
-			else:
+			elif vision_mode == POINTCHECK:
 				test.record()
 				a = int(self.xy[0,0])
 				b = int(self.xy[0,1])
 				infoz = [self.room.pointcheck((a + eye_x, b + eye_y)) for eye_x, eye_y in self.eyepoints]
 				test.record("bee:update:thinking:inputs:pointchecks")
+			else:
+				infoz = []
+				test.record()
+				a = int(self.xy[0,0])
+				b = int(self.xy[0,1])
+				points_to_check = ((a + eye_x, b + eye_y) for eye_x, eye_y in self.eyepoints)
+				for i, (x,y) in enumerate(points_to_check):
+					c = int(x / bw)
+					r = int(y / bh)
+					objects = self.room.object_directory[c%graphics.world_tw][r%graphics.world_th]
+					g = i % 2
+					if g == 0:
+						infoz.append (any(other.kind=="bullet" for other in objects))
+					else:
+						infoz.append(self.room.pointcheck((x,y)))
+						# walls
+				test.record("bee:update:thinking:inputs:tiles")
+
 
 			#go = time.time()
 			#t = [math.sin(go), math.sin(go/2.3), math.sin(go)%1.5]
@@ -494,7 +521,20 @@ class Bee(physical.Physical):
 
 
 			
-			inputs = disps + [1 - distance for distance in infoz] + [self.health / settings[MAX_HEALTH]] # 1
+			inputs = disps + [1 - distance for distance in infoz] + [self.health / settings[MAX_HEALTH]] + [expit(self.vxy[0,0]), expit(self.vxy[0,1])]# 1
+			
+			self.brain.nodetags[(0,0)] = "verbatim", "player x"
+			self.brain.nodetags[(0,1)] = "verbatim", "player y"
+			i = 2
+			for vector in self.eyepoints:
+				self.brain.nodetags[(0,i)] = "vector", vector
+				i+=1
+			self.brain.nodetags[(0,i)] = "verbatim", "health"
+			i+=1
+			self.brain.nodetags[(0,i)] = "verbatim", "x velocity"
+			i+=1
+			self.brain.nodetags[(0,i)] = "verbatim", "y velocity"
+			i+=1
 
 
 			test.remove_sticky("bee:update:thinking:inputs:3")
@@ -507,7 +547,6 @@ class Bee(physical.Physical):
 			self.outputs = outputs = self.brain.compute(inputs)
 			test.remove_sticky("bee:update:thinking:compute")
 			test.add_sticky("bee:update:thinking:outputs")
-
 			self.up = 2 * outputs[0,0] - 1
 			#down = outputs[1]
 			self.leftright = 2 * outputs[0,1] - 1
@@ -634,6 +673,9 @@ class Bee(physical.Physical):
 			kickdirection = -disp / dist
 			self.player.vxy += (dist + 0.01)**-2 * kickdirection * settings[STING_REPULSION]
 			#self.vxy -= (dist + 0.01)**-2 * kickdirection * settings[STING_REPULSION]
+
+			#self.vxy += disp / dist * settings[STING_REPULSION]
+
 			#self.player.grounded = 0
 
 			self.health += settings[HEALTH_GAIN]
@@ -846,9 +888,9 @@ class Bee(physical.Physical):
 			#pygame.draw.circle(surface, [int(p) for p in centercolor], (px, py), rad)
 
 
-			if self.flash:
-				pygame.draw.circle(surface, [255, 255, 255], (px, py), self.flash + 1, 1)
-				self.flash -= 1
+			#if self.flash:
+			#	pygame.draw.circle(surface, [255, 255, 255], (px, py), self.flash + 1, 1)
+			#	self.flash -= 1
 
 			
 			regularcolor = self.color
@@ -865,7 +907,13 @@ class Bee(physical.Physical):
 				dx = math.cos(rotation)
 				dy = math.sin(rotation)
 				dx, dy = 4 * dx, 4 * dy
-				pygame.draw.line(surface, [255, 255, 255], (px+dx,py+dy), (px-dx, py-dy), 3)
+				if self.flash:
+					self.flash -= 1
+				if self.flash > 25:
+					self.flash = 25
+				if self.flash < 0:
+					self.flash = 0
+				pygame.draw.line(surface, [255 - 25 * self.flash, 255, 255 - 25 * self.flash], (px+dx,py+dy), (px-dx, py-dy), 3)
 			else:
 				radius = 1 + int(self.radius*self.health)
 				if (radius < 1):

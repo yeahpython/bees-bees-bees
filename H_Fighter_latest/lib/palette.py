@@ -1,5 +1,6 @@
 import test
 from numpy import array
+import math
 
 class Palette(object):
 	def __init__(self):
@@ -18,22 +19,27 @@ class Palette(object):
 			self.min[i] *= (1-speed)
 			self.min[i] += speed * newmin[i]
 		self.scaling = [1.0 / (abs(M- m) + 0.01) for M, m in zip(self.max, self.min)]
+		for i, x in enumerate(self.scaling):
+			if math.isnan(x):
+				self.scaling[i] = 0.5
 		test.remove_sticky("palette")
 
 	def get_color(self, b):
 		test.record()
-		try:
-			outputs = array(b.outputs)[0]
-			for i in range(2):
-				outputs[i] = (outputs[i] - self.min[i]) * self.scaling[i]
-			color = [outputs[0], outputs[1], outputs[1] - outputs[0]]
-			color = [min(i, 1) for i in color]
-			color = [max(i, 0) for i in color]
-			color = [int(50 + i * 205) for i in color]
-			test.record("palette")
-			return color
-		except:
-			print "palette error"
-			test.record("palette")
-			return (255, 255, 255)
+		outputs = [b.outputs[0,0] + 0, b.outputs[0,1] + 0]
+		for i in range(2):
+			outputs[i] = (outputs[i] - self.min[i]) * self.scaling[i]
+		color = [outputs[0], outputs[1], outputs[1] - outputs[0]]
+		for i, x in enumerate(color):
+			if math.isnan(x):
+				color[i] = 1
+		color = [int(50 + i * 205) for i in color]
+		color = [min(i, 255) for i in color]
+		color = [max(i, 0) for i in color]
+		test.record("palette")
+		return color
+		#except ValueError as e:
+		#	print "Met a ValueError while getting color"
+		#	test.record("palette")
+		#	return (255, 255, 255)
 		

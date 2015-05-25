@@ -10,6 +10,7 @@ import itertools
 import physical
 import brain
 import messages
+import bullet
 import utils
 from game_settings import *
 
@@ -55,6 +56,7 @@ class Player(physical.Physical):
 		self.grounded = 0
 		self.automaticEvasion = 0
 		self.jetpackfuel = 0
+		self.going_right = 1
 
 	def maybe_die(self):
 		if self.radius < 10:
@@ -67,6 +69,12 @@ class Player(physical.Physical):
 			self.lifetime = 0
 			#self.radius = 40
 			#self.prevrad = 40
+
+	def shoot(self):
+		b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix([0.8 * self.going_right, 0.0]))
+		#b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix(0.1 * numpy.random.random((1,2)) - 0.05))
+		b.xy = self.xy * 1
+		self.room.bullets.append(b)
 
 	def update(self, dt, key_states, key_presses):
 		test.add_sticky('player')
@@ -104,6 +112,17 @@ class Player(physical.Physical):
 
 
 		self.counter += 1
+		'''if self.counter % 10 == 0:
+			self.shoot()
+			if self.vxy[0,0] < 0:
+				self.going_right = -1
+			if self.vxy[0,0] > 0:
+				self.going_right = 1
+			b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix([0.3 * self.going_right, 0.0]))
+			#b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix(0.1 * numpy.random.random((1,2)) - 0.05))
+			b.xy = self.xy * 1
+			self.room.bullets.append(b)'''
+
 		self.counter2 += 1
 		
 
@@ -174,11 +193,13 @@ class Player(physical.Physical):
 		
 		if self.feetSupported:
 			if key_states[pygame.K_LEFT]:
+				self.going_right = -1
 				if self.normals:
 					self.vxy += groundacc*self.normals[0]*matrix([[0, -1],[1, 0]])*dt# Left # used to be
 				else:
 					self.vxy += groundacc*matrix([-1, 0])*dt
 			elif key_states[pygame.K_RIGHT]:
+				self.going_right = 1
 				if self.normals:
 					self.vxy += groundacc*self.normals[0]*matrix([[0, 1],[-1, 0]])*dt# Right
 				else:
@@ -265,7 +286,7 @@ class Player(physical.Physical):
 		for x,y in utils.body_copies(self.xy, self.radius):
 			px = ixy[0,0] + x*graphics.world_w
 			py = ixy[0,1] + y*graphics.world_h
-			#pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
+			pygame.draw.circle(surface, [180,255,255], (px, py), int(self.radius), 1)
 
 			pi = 3.1415926
 

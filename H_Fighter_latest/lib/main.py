@@ -490,7 +490,6 @@ def main_loop():
 		framecount += 1
 
 		test.begin_timing(test.segs, test.segdescriptors)
-		test.add_sticky('main:early')
 		#Handle player input
 		key_presses = pygame.event.get(pygame.KEYDOWN)
 		key_states = pygame.key.get_pressed()
@@ -560,6 +559,9 @@ def main_loop():
 			r.madness %= 5
 			for bee in r.bees:
 				bee.madness = r.madness
+
+		if key_ups[pygame.K_LSHIFT] or key_ups[pygame.K_RSHIFT]:
+			p.shoot()
 
 		if key_ups[pygame.K_a]:
 			r.stasis = not r.stasis
@@ -973,10 +975,6 @@ def main_loop():
 		for phys in r.food + r.bullets:
 			phys.update(dt, key_states, key_presses)
 
-		try:
-			test.remove_sticky('main:early')
-		except:
-			print "The main:early error came up"
 
 		test.add_sticky('bee')
 		for b in r.bees:

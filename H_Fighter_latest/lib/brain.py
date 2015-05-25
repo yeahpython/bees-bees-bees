@@ -1,20 +1,23 @@
-"""So eventually this is supposed to be a evolution simulation
-meets platform game but for now it's basically a brain"""
+# module representing the brain of a bee
 
 import random, math, pygame
-from numpy import *
+
+import numpy as np
+#from numpy import *
+from numpy import matrix, array, linalg
 from pygame.locals import *
 import graphics
-import test
+from test import add_sticky, remove_sticky
+from copy import deepcopy
 import messages
 from numpy import linalg, dot
 from game_settings import *
 from scipy.special import expit
 
-font = pygame.font.SysFont("Droid Serif", 20)
+font = pygame.font.SysFont("Droid Serif", 30)
 
-basicallynotmoving = 0.015
 
+'''
 force = 0.5
 specialforcerules = {
 						"wall above right" : matrix([force, -force, -force]),
@@ -45,6 +48,7 @@ specialdrawinglines = {
 						"go left" : [-off, 0],
 						"go right" : [off, 0],
 						}
+'''
 
 
 include_cycles = False	
@@ -57,105 +61,43 @@ def afunc(x):
 	else:
 		return 1/(1+math.e**(-x))
 
-def fast_activation(x):
-	pass
-	# x is a numpy array
-
 def welp(x):
 	return 2/(1+math.e**-x) - 1
 
 
 class Brain(object):
-	"A neural network! You can make it, randomize it, or make it process stuff!"
-	#import random
-
 	def __init__(self, number_of_inputs, other_node_sizes, activation_functions = None):
 		self.nodetags = {}
-		if activation_functions == None:
+
+		if activation_functions:
+			self.activation_functions = activation_functions
+		else:
 			#activation_functions = [expit, expit, expit, expit, expit, expit]
-			activation_functions = [afunc, afunc, afunc, afunc, afunc, afunc]
+			self.activation_functions = [afunc, afunc, afunc, afunc, afunc, afunc]
 
-		#[6,5,5,...] with the 6 for the 
-		self._all_layer_sizes = [number_of_inputs + 1] + other_node_sizes
-
-		#[ [0, 0, 0, ...], [0, 0, 0, ...], [0, 0, 0, ...], ... ]
-		self.nodes = [ [0]*layer_size for layer_size in self._all_layer_sizes]
-
-		#this is going to be a big jar of matrices
-		self._all_edges = []
-		for k in range(1,len(self.nodes)):
-			height = len(self.nodes[k - 1])
-			if include_cycles:
-				height += len(self.nodes[k])
-			#because the width determines the size of the output, layer k!
-			width = len(self.nodes[k])
-			next_edges = [[2*random.random()-1 for w in range(width)] for h in range(height)]
-			'''
-			for h in range(height):
-				for w in range(width):
-					if h < len(self.nodes[k]):
-						if h == w:
-							next_edges[h][w] = -1
-						else:
-							next_edges[h][w] = random.random()*2-1
-					else:
-						next_edges[h][w] = random.random()*2-1
-			'''
-
-			self._all_edges.append(matrix(next_edges))
-		self.nodes = [matrix(t) for t in self.nodes] # NOT ACTUALLY DUMMY NODES ANY MORE
-		self.activation_functions = activation_functions
-		self.mutationrate = [30,30,30]
+		self._layer_sizes = [number_of_inputs + 1] + other_node_sizes
+		
+		self.nodes = None
 		self.randomizenodes()
+
+		self._all_edges = None
 		self.randomizeconnections()
 
-	def tester(self):
-		"returns zero-valued nodes and a list of matrices representing edges"
-		return self.nodes, self._all_edges
+		self.mutationrate = [30,30,30]
+
 
 	def randomizenodes(self):
-		self.nodes = [ matrix([random.random()*1 - 0.5 for k in range(layer_size)]) for layer_size in self._all_layer_sizes]
+		self.nodes = [ matrix(np.random.random( (1, layer_size) ) - 0.5) for layer_size in self._layer_sizes]
 
 	def randomizeconnections(self):
-		for layer in self._all_edges:
+		self._all_edges = []
+		for first, second in zip(self._layer_sizes, self._layer_sizes[1:]):
+			self._all_edges.append(matrix(10 * np.random.random((first + include_cycles * second, second)) - 5))
+		'''for layer in self._all_edges:
 			s = layer.shape
 			for r in range(s[0]):
 				for c in range(s[1]):
-					layer[r,c] = random.random()*10 - 5
-
-	def allnodesstationary(self, velocities, scalefactor):
-		for k, v in velocities.iteritems():
-			n = linalg.norm(v)
-			if n > basicallynotmoving * scalefactor:
-				return False
-		return True
-
-	def avelocs(self, locations, scalefactor):
-		count=0
-		total = matrix([0,0,0])
-
-		for i, layer in enumerate(self.nodes):
-			for j in range(layer.shape[1]):
-				#locations[(i,j)] += velocities[(i,j)]
-				total += locations[(i,j)]
-				count += 1
-		ave = total / count
-
-		for i, layer in enumerate(self.nodes):
-			for j in range(layer.shape[1]):
-				locations[(i,j)] -= ave
-				#locations[(i,j)] += matrix([graphics.world_w, graphics.world_h])/2
-				#locations[(i,j)] += scalefactor * matrix([graphics.screen_w, graphics.screen_h, 0]) / 2
-
-	def automaticscale(self, locations):
-		maximum = 0
-		for i, layer in enumerate(self.nodes):
-			for j in range(layer.shape[1]):
-				p = array(locations[(i,j)])[0]
-				dist = linalg.norm(locations[(i,j)] - matrix([graphics.screen_w, graphics.screen_h, 0]))
-				maximum = max(dist, maximum)
-
-		return maximum / 2000
+					layer[r,c] = random.random()*10 - 5'''
 
 	def loadinputs(self, inp):
 		for i in range(len(inp)):
@@ -163,78 +105,59 @@ class Brain(object):
 
 	def compute(self, inp, use_memory = 1):
 		prefix = 'bee:update:thinking:compute:'
-		test.add_sticky(prefix+"test")
 		"Take the input nodes and work out what happens at the output"
 		#settings[BRAIN_BIAS]
-		test.add_sticky(prefix + "1")
+		add_sticky(prefix + "1")
 		self.loadinputs(inp + [settings[BRAIN_BIAS]])
 		#self.nodes[0] = matrix(inp + [settings[BRAIN_BIAS]])
-		test.remove_sticky(prefix + "1")
+		remove_sticky(prefix + "1")
 		
 		
 		for i, edges in enumerate(self._all_edges):
-			test.add_sticky(prefix + 'multiplication')
+			add_sticky(prefix + 'multiplication')
 			if include_cycles:
 				'''combine current and previous layer'''
-				test.add_sticky(prefix + 'multiplication:appending')
+				add_sticky(prefix + 'multiplication:appending')
 				g = append( settings[MEMORY_STRENGTH] * use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
-				test.remove_sticky(prefix + 'multiplication:appending')
+				remove_sticky(prefix + 'multiplication:appending')
 				#g = append( use_memory * self.nodes[i+1], self.nodes[i], axis = 1)
 				dot(g,edges, out=self.nodes[i+1])
 				#self.nodes[i + 1] = g*edges
 			else:
 				dot(self.nodes[i], edges, out=self.nodes[i+1])
-			test.remove_sticky(prefix + 'multiplication')
-			test.add_sticky(prefix + 'activation')
+			remove_sticky(prefix + 'multiplication')
+			add_sticky(prefix + 'activation')
 			'''apply activation function'''
 			expit(self.nodes[i+1], out = self.nodes[i+1])
-			'''
-			#self._thoughts is literally a matrix shaped like a list.
-			#I just want to apply a function and this worked.
-			self.nodes = array(self.nodes)
-			self.nodes = self.activation_functions[i](self.nodes)
-			self.nodes = array(self._thoughts)[0]
-			self._thoughts = list(self._thoughts)
-			#self._thoughts = list(   array(  self.activation_functions[i]( array(self._thoughts) )  )[0]   )
-			'''
-			test.remove_sticky(prefix + 'activation')
-		test.remove_sticky(prefix+"test")
-		return self.nodes[-1] #output is now a matrix!
+			remove_sticky(prefix + 'activation')
+		return self.nodes[-1] #output is now a matrix; used to be a list
 
-	def get2DPoint(self, Point3D, theta):
-		rotation = matrix([[math.cos(theta),0,-math.sin(theta)],[0,1,0],[math.sin(theta),0,math.cos(theta)]])
-		p = matrix(Point3D) * rotation.T
-		p = array(p)[0]
-		a = [p[0],p[1]]
-		a[1] += 0.2 * p[2]
-		a[0] += graphics.screen_w / 2
-		a[1] += graphics.screen_h / 2
-		'''
-		distortion = p[2] / 500
-		if distortion > 0.5:
-			distortion = 0.5
-		if distortion < -0.5:
-			distortion = -0.5
-		a[0] *= 1 + distortion'''
-		return a
-
-	def getconnectionstrengthrange(self):
-		maxconnection = 0
-		minconnection = 0
-		for i, layer in enumerate(self._all_edges):
+	def mutate(self):
+		#print self._all_edges
+		for layer in self._all_edges:
 			s = layer.shape
-			for j1 in range(s[0]):
-				for j2 in range(s[1]):
-					#weight = 2*afunc(layer[j1, j2]) - 1
-					weight = layer[j1, j2]
-					if weight > 0:
-						maxconnection = max(weight, maxconnection)
-					elif weight < 0:
-						minconnection = min(weight, minconnection)
-		self.maxconnection = maxconnection
-		self.minconnection = minconnection
+			for r in range(s[0]):
+				for c in range(s[1]):
+					if random.random() < settings[MUTATION_CHANCES]:
+						layer[r,c] *= (random.random()*2 - 1) * settings[SCALING_MUTATION]  + 1
+						layer[r,c] += (random.random()*2 - 1) * settings[ADDITIVE_MUTATION_RATE]
+						if random.random() < settings[INVERT_MUTATION_RATE]:
+							layer[r,c]*= -1
+						#if layer[r,c] > 5:
+						#	layer[r,c] = 5.0
+						#if layer[r,c] < -5:
+						#	layer[r,c] = -5.0
+					#if random.random() >= 0.9**self.mutationrate[1]:
+					#	layer[r,c] *= -1
+					#if random.random() >= 0.9**self.mutationrate[2]:
+					#	layer[r,c] = random.random()*2 - 1
+
+		#self.mutationrate[0] += random.random()*0.2 - 0.1
+		#self.mutationrate[1] += random.random()*0.2 - 0.1
+		#self.mutationrate[2] += random.random()*0.2 - 0.1
 
 
+	# Non-fundamental function:
 	def drawfromlocationtable(self, locations, sf, scalefactor = 1.0, translation = matrix([0.0,0.0,0.0]), detailed = 1, rotation = 0, shownegatives = 1, showlines = 1, time = -1):
 		mindepth = locations[(0,0)][0,2] * 1
 		maxdepth = locations[(0,0)][0,2] * 1
@@ -244,12 +167,25 @@ class Brain(object):
 				maxdepth = max(maxdepth, locations[(i,j)][0,2])
 		
 		if detailed:
-			maxconnection = self.maxconnection
-			minconnection = self.minconnection
+			minconnection, maxconnection = get_connection_strength_range(self._all_edges)
+
+			selected = None
+			x,y = pygame.mouse.get_pos()
+			for node, vector in locations.iteritems():
+				position = array(vector / scalefactor - translation)[0]
+				pos2d = get2DPoint(position, rotation)
+				if (pos2d[0] - x) ** 2 + (pos2d[1] - y) ** 2 < 100:
+					selected = node
+
 
 			for i, layer in enumerate(self._all_edges):
+				if selected and (i not in [selected[0]-1, selected[0]]):
+					continue
 				s = layer.shape
 				for j1 in range(s[0]):
+					#fir is an array representing the first node
+					
+
 					fir = 0
 					if j1 < self.nodes[i].shape[1]:
 						fir = array(locations[(i,j1)] / scalefactor - translation)[0]
@@ -259,6 +195,9 @@ class Brain(object):
 						break
 					for j2 in range(s[1]):
 						'''iterating over all connected neurons first = (i, j1) second = (i+1, j2)'''
+						# sec is an array representing the first node
+						if selected and ((i, j1) != selected) and ((i+1, j2) != selected):
+							continue
 						sec = array(locations[(i+1,j2)] / scalefactor - translation)[0] * 1
 
 
@@ -284,10 +223,10 @@ class Brain(object):
 						pieces = 1
 
 						'''lightup = []
-																								if time != -1:
-																									t = time / 2
-																									lightup = [t]
-																									lightup = [-x % pieces for x in lightup]'''
+						if time != -1:
+							t = time / 2
+							lightup = [t]
+							lightup = [-x % pieces for x in lightup]'''
 
 							
 
@@ -325,8 +264,8 @@ class Brain(object):
 							color = [max(0, x) for x in color]
 							color = [min(255, x) for x in color]
 
-							one2D = self.get2DPoint(firstpoint, rotation)
-							two2D = self.get2DPoint(secondpoint, rotation)
+							one2D = get2DPoint(firstpoint, rotation)
+							two2D = get2DPoint(secondpoint, rotation)
 
 
 							if 0 and index in lightup:
@@ -343,30 +282,35 @@ class Brain(object):
 				color = graphics.colorcycle[i%5]
 				c = [layer[0,j] * x for x in color]
 				c = [ int(x) for x in color]
-				pt = self.get2DPoint(pt3D, rotation)
+				pt = get2DPoint(pt3D, rotation)
 				pt = [int(x) for x in pt]
 				z = locations[(i,j)][0,2] * 1
 				z = (z - mindepth) / (maxdepth - mindepth)
 				z += 1
 				pygame.draw.circle(sf, c, pt, int(5 * z), 0)
 				if (i,j) in self.nodetags:
-					message = self.nodetags[i,j] 
-					off = 500
-					if showlines:
-						if message in specialdrawinglines:
-							offset = specialdrawinglines[message]
-							pt3D[0] += offset[0]
-							pt3D[1] += offset[1]
-							otherpoint = self.get2DPoint(pt3D, rotation)
+					kind, message = self.nodetags[i,j]
+					if kind == "vector": 
+						if showlines:
+							x,y = message
+							offset = matrix([x,y,0])
+							pt3D[0] += offset[0,0]
+							pt3D[1] += offset[0,1]
+							otherpoint = get2DPoint(pt3D, rotation)
 							#otherpoint = [original + diff for original, diff in zip(pt, offset)]
 							pygame.draw.line(sf, (255, 255, 255), pt, otherpoint, 1)
-
-					if 1 or message not in ["wall above right", "wall below right", "wall above left", "wall below left", "go up", "go down", "go left", "go right"]:
+					elif kind == "verbatim":
 						text = font.render(message, 1, [200,200,200])
 						textpos = text.get_rect(left = pt[0] + 10, centery = pt[1])
 						if pt[0] < graphics.screen_w/2:
 							textpos = text.get_rect(right = pt[0] - 10, centery = pt[1])
 						sf.blit(text, textpos)
+					'''if 1 or message not in ["wall above right", "wall below right", "wall above left", "wall below left", "go up", "go down", "go left", "go right"]:
+						text = font.render(message, 1, [200,200,200])
+						textpos = text.get_rect(left = pt[0] + 10, centery = pt[1])
+						if pt[0] < graphics.screen_w/2:
+							textpos = text.get_rect(right = pt[0] - 10, centery = pt[1])
+						sf.blit(text, textpos)'''
 					
 		pygame.display.flip()
 
@@ -382,12 +326,20 @@ class Brain(object):
 					#secondpoint = ((i+1)*hscale + hoff, j2*vscale + voff)
 					one = locations[(i,j1)]
 					two = locations[(i+1,j2)]
-					distance = x = linalg.norm(one-two)
-					f = -abs(x - 100)
-					total += f
+					distance = linalg.norm(one-two)
+					f = distance * distance
+
+					influence = abs(layer[j1, j2])
+					total -= f * influence # quality is decreased when connected things are far apart
+		
+		for _, v in locations:
+			for _, v2 in locations:
+				if v != v2:
+					d = linalg.norm(v - v2)
+					total += 1000 / d # this is like electric potential
+
+
 		return total
-
-
 
 	def computevelocities(self, velocities, locations):
 		for i, layer in enumerate(self._all_edges):
@@ -425,9 +377,10 @@ class Brain(object):
 		for n1, l1 in locations.iteritems():
 			#apply special forces to some nodes
 			if n1 in self.nodetags:
-				name = self.nodetags[n1]
-				if name in specialforcerules:
-					velocities[n1] += specialforcerules[name]
+				kind, message = self.nodetags[n1]
+				if kind == "vector":
+					x,y = message
+					velocities[n1] += array([x, y, -1000]) * 0.1
 
 			for n2, l2 in locations.iteritems():
 				away = l1 - l2
@@ -472,9 +425,6 @@ class Brain(object):
 			#if linalg.norm(velocities[n1]) < 0.01:
 			# 	velocities[n1]*=0
 
-
-
-
 	def visualize(self, surface):
 		background = pygame.Surface((graphics.screen_w, graphics.screen_h))
 		background.fill((0, 0, 0))
@@ -493,7 +443,7 @@ class Brain(object):
 				]
 
 		for i, message in enumerate(tosay):
-			messages.say(message, time = 0, down = i, surface = background, size = "small")
+			messages.say(message, time = 0, down = i, surface = background, color = [255,255,255], size = "small")
 
 		hscale = 700 / 4
 		vscale = 30
@@ -508,11 +458,10 @@ class Brain(object):
 		for i, layer in enumerate(self.nodes):
 			for j in range(layer.shape[1]):
 				#locations[(i,j)] = matrix([i*hscale + hoff, j*vscale + voff])
-				locations[(i,j)] = matrix([random.random()*graphics.world_w, random.random()*graphics.world_h,  random.random()*1000 - 500])
+				locations[(i,j)] = matrix([ i * 200, j * 10,  random.random()*10 - 5])
 				theta = random.random() * 2 * 3.1415926
 				velocities[(i,j)] = 0.1 * matrix([math.cos(theta),math.sin(theta), random.random() * 2 - 1])
 		
-		self.getconnectionstrengthrange()
 		self.drawfromlocationtable(locations, sf, 1, translation)
 		#pygame.draw.circle(sf, (0, 255, 255), (100, 100), int(50 * random.random()) + 10, 1)
 
@@ -528,6 +477,10 @@ class Brain(object):
 		quit = 0
 		previous_key_states = []
 		key_downs = []
+
+		consecutive_no_improvement = 0
+
+
 
 		while not (done or pygame.event.get(pygame.QUIT)):
 			n += 1
@@ -549,17 +502,7 @@ class Brain(object):
 			if key_downs[pygame.K_s]:
 				shownegatives = not shownegatives
 
-			if key_states[pygame.K_z]:
-				scalefactor *= scalerate
-				self.avelocs(locations,scalefactor)
-
-			if key_states[pygame.K_x]:
-				scalefactor /= scalerate
-				self.avelocs(locations,scalefactor)
-
-			if key_downs[pygame.K_c]:
-				scalefactor = 1.0
-				translation *= 0
+			
 
 			if key_downs[pygame.K_p]:
 				simulatephysics = not simulatephysics
@@ -569,32 +512,75 @@ class Brain(object):
 
 			stepsize = 100
 
+			moving = False
+			if key_states[pygame.K_z]:
+				moving = True
+				scalefactor *= scalerate
+				avelocs(locations,scalefactor)
+
+			if key_states[pygame.K_x]:
+				moving = True
+				scalefactor /= scalerate
+				avelocs(locations,scalefactor)
+
+			if key_downs[pygame.K_c]:
+				moving = True
+				scalefactor = 1.0
+				translation *= 0
+
 			if key_states[pygame.K_UP]:
+				moving = True
 				translation[0,1] -= stepsize
-				self.avelocs(locations,scalefactor)
+				avelocs(locations,scalefactor)
 
 			if key_states[pygame.K_DOWN]:
+				moving = True
 				translation[0,1] += stepsize
-				self.avelocs(locations,scalefactor)
+				avelocs(locations,scalefactor)
 
 			pi = 3.1415926
 
-
 			if key_states[pygame.K_LEFT]:
+				moving = True
 				rotation += 0.05 * pi
 
 				#translation[0,0] -= stepsize
 			if key_states[pygame.K_RIGHT]:
+				moving = True
 				rotation -= 0.05 * pi
 
 
 			
 
 
-			sf.blit(background, (0,0))
+			
 
-			#newlocations = {}
-			if simulatephysics:
+			
+			if simulatephysics and not moving:
+				'''
+				# random improvement
+				for _ in range(5):
+					oldlocations = deepcopy(locations)
+					for k in locations:
+						locations[k] += matrix(5 * np.random.random((1,3)) - 3)
+					if not (pygame.key.get_pressed()[pygame.K_z] or pygame.key.get_pressed()[pygame.K_x]):
+						scalefactor = scalefactor**0.8 * automaticscale(locations)**0.2
+					avelocs(locations,scalefactor)
+					new_value = self.evaluate(locations)
+					if new_value > currmax:
+						locations = oldlocations
+						currmax = new_value
+						consecutive_no_improvement = 0
+						
+					else:
+						consecutive_no_improvement += 1
+						if consecutive_no_improvement > 1000:
+							simulatephysics = False'''
+
+				
+
+				
+
 				for i, layer in enumerate(self.nodes):
 					for j in range(layer.shape[1]):
 						locations[(i,j)] += velocities[(i,j)] * 100
@@ -603,9 +589,9 @@ class Brain(object):
 					for j in range(layer.shape[1]):
 						locations[(i,j)] += velocities[(i,j)] * 100
 				if not (pygame.key.get_pressed()[pygame.K_z] or pygame.key.get_pressed()[pygame.K_x]):
-					scalefactor = scalefactor**0.8 * self.automaticscale(locations)**0.2
-				self.avelocs(locations,scalefactor)
-				if self.allnodesstationary(velocities, scalefactor):
+					scalefactor = scalefactor**0.8 * automaticscale(locations)**0.2
+				avelocs(locations,scalefactor)
+				if all_nodes_stationary(velocities, scalefactor):
 					simulatephysics = False
 					for i, layer in enumerate(self.nodes):
 						for j in range(layer.shape[1]):
@@ -618,6 +604,7 @@ class Brain(object):
 
 			activekeys = [pygame.K_l, pygame.K_s, pygame.K_z, pygame.K_c, pygame.K_x, pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
 			if 1 or simulatephysics or any(key_states[key] for key in activekeys):
+				sf.blit(background, (0,0))
 				self.drawfromlocationtable(locations, sf, scalefactor, translation, detailed, rotation, shownegatives, showlines, time = n)
 				#messages.say("scaling is " + str(scalefactor), 0, down = 20, size = "small")
 				pygame.display.flip()
@@ -627,30 +614,63 @@ class Brain(object):
 			previous_key_states = key_states[:]
 		return quit
 
+# this is for visualization of brain
+basicallynotmoving = 0.015
+def all_nodes_stationary(velocities, scalefactor):
+	#return all(linalg.norm(v) < basicallynotmoving * scalefactor for k,v in velocities.iteritems())
+	for k, v in velocities.iteritems():
+		n = linalg.norm(v)
+		if n > basicallynotmoving * scalefactor:
+			return False
+	return True
 
+def avelocs(locations, scalefactor):
+	count=0
+	total = matrix([0,0,0])
 
+	for key, value in locations.iteritems():
+		total += value
+		count += 1
+	ave = total / count
+	for key, value in locations.iteritems():
+		locations[key] -= ave
 
+def automaticscale(locations):
+	maximum = 0
+	for k, v in locations.iteritems():
+		p = array(v)[0]
+		dist = linalg.norm(v - matrix([graphics.screen_w, graphics.screen_h, 0]))
+		maximum = max(dist, maximum)
+	return maximum / 2000
 
-	def mutate(self):
-		#print self._all_edges
-		for layer in self._all_edges:
-			s = layer.shape
-			for r in range(s[0]):
-				for c in range(s[1]):
-					if random.random() < settings[MUTATION_CHANCES]:
-						layer[r,c] *= (random.random()*2 - 1) * settings[SCALING_MUTATION]  + 1
-						layer[r,c] += (random.random()*2 - 1) * settings[ADDITIVE_MUTATION_RATE]
-						if random.random() < settings[INVERT_MUTATION_RATE]:
-							layer[r,c]*= -1
-						#if layer[r,c] > 5:
-						#	layer[r,c] = 5.0
-						#if layer[r,c] < -5:
-						#	layer[r,c] = -5.0
-					#if random.random() >= 0.9**self.mutationrate[1]:
-					#	layer[r,c] *= -1
-					#if random.random() >= 0.9**self.mutationrate[2]:
-					#	layer[r,c] = random.random()*2 - 1
+def get2DPoint(Point3D, theta):
+	rotation = matrix([[math.cos(theta),0,-math.sin(theta)],[0,1,0],[math.sin(theta),0,math.cos(theta)]])
+	p = matrix(Point3D) * rotation.T
+	p = array(p)[0]
+	a = [p[0],p[1]]
+	a[1] += 0.2 * p[2]
+	a[0] += graphics.screen_w / 2
+	a[1] += graphics.screen_h / 2
+	'''
+	distortion = p[2] / 500
+	if distortion > 0.5:
+		distortion = 0.5
+	if distortion < -0.5:
+		distortion = -0.5
+	a[0] *= 1 + distortion'''
+	return a
 
-		#self.mutationrate[0] += random.random()*0.2 - 0.1
-		#self.mutationrate[1] += random.random()*0.2 - 0.1
-		#self.mutationrate[2] += random.random()*0.2 - 0.1
+def get_connection_strength_range(edges):
+	maxconnection = 0
+	minconnection = 0
+	for i, layer in enumerate(edges):
+		s = layer.shape
+		for j1 in range(s[0]):
+			for j2 in range(s[1]):
+				#weight = 2*afunc(layer[j1, j2]) - 1
+				weight = layer[j1, j2]
+				if weight > 0:
+					maxconnection = max(weight, maxconnection)
+				elif weight < 0:
+					minconnection = min(weight, minconnection)
+	return minconnection, maxconnection

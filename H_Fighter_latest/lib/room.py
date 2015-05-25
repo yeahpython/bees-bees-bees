@@ -606,7 +606,7 @@ class Room(object):
 		if TIME_INITIALIZATION: print "convexes took", time.time() - convexstarttime, "seconds"
 
 	def pointcheck(self, point):
-		'''check whether or not a given point is solid'''
+		'''true if given tuple (x,y) is solid'''
 		x, y = point[0] % self.collisionfield.get_width(),point[1] %self.collisionfield.get_height()
 		if not isinstance(x, int) or not isinstance(y, int):
 			print "watch out, pointcheck wants the inputs to be integers!"

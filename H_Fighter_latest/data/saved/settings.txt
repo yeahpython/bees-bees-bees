@@ -115,7 +115,7 @@ p38
 I00
 sS'Wall Acid'
 p39
-F0.06
+F0.01
 sS"'Too Slow' Threshold"
 p40
 F0.05

@@ -89,6 +89,7 @@ class Physical(object):
 		self.objectsinview = self.room.object_directory[x%graphics.world_tw][y%graphics.world_th]
 		for c,r in self.tiles_that_cover_me():
 			self.room.object_directory[c%graphics.world_tw][r%graphics.world_th].append(self)
+			test.tiles.append((c,r))
 
 		#if not self.visible and ignoreinvisible:
 		#	return
@@ -133,7 +134,6 @@ class Physical(object):
 		
 		test.add_sticky(prefix+":repel_loop")
 		for x,y in self.tiles_that_cover_me(r):
-			test.tiles.append((x,y))
 			try:
 				c = self.room.convex_directory[x][y]
 			except:
