@@ -2,6 +2,7 @@ bees-bees-bees
 ==============
 ![screenshot from game](http://stanford.edu/~tommyli/beeees.png)
 A game where adversaries have truly evolving intelligence
+
 Features:
  - a modular way to specify the structure of neural networks
  - a custom physics engine
