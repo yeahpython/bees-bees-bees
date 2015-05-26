@@ -8,6 +8,7 @@ import numpy
 import test
 import itertools
 import physical
+import time
 import brain
 import messages
 import bullet
@@ -45,6 +46,7 @@ class Player(physical.Physical):
 		self.name = "Harold"
 		self.killmode = 0
 		self.kind = "player"
+		self.last_random_jump = 0
 		self.place(self.room.start_position)
 		self.room.player = self
 		self.feetSupported = 0
@@ -161,7 +163,9 @@ class Player(physical.Physical):
 
 
 		if key_states[pygame.K_SPACE]:
-			self.randomize_position()
+			if time.time() - self.last_random_jump > 1:
+				self.randomize_position()
+				self.last_random_jump = time.time()
 
 		if key_states[pygame.K_g]:
 			#self.topbar.flash("Generating bees!")
@@ -401,7 +405,7 @@ class Player(physical.Physical):
 			righthandx = shoulderx + 0.4*self.radius * math.cos(self.walkingspeed*pi*self.xy[0,0]) * (0.2+min(abs(self.vxy[0,0]), 0.1))**0.5 * 2
 			righthandy = shouldery + self.radius
 			righthandy -= abs(int(self.offset[0,1] * 5))
-			righthand = (righthandx, righthandy)
+			
 			
 
 			'''left arm'''
@@ -413,12 +417,20 @@ class Player(physical.Physical):
 			
 			lefthandx = shoulderx - 0.4*self.radius * math.cos(self.walkingspeed*pi*self.xy[0,0]) * (0.2+min(abs(self.vxy[0,0]), 0.1))**0.5 * 2
 			lefthandy = shouldery + self.radius
+
 			lefthandy -= abs(int(self.offset[0,1] * 5))
+			
+
+			if self.vxy[0,1] > 0:
+				g = min(self.vxy[0,1], 0.6)
+				lefthandy -= 40 * g
+				righthandy -= 40 * g
+				lefthandx += 10 * g * -math.cos(self.walkingspeed*pi*self.xy[0,0])
+				righthandx += 10 * g * math.cos(self.walkingspeed*pi*self.xy[0,0])
+
+
+			righthand = (righthandx, righthandy)
 			lefthand = (lefthandx, lefthandy)
-
-
-
-
 
 			if self.normals:
 				self.lastnormal = self.normals[0]

@@ -1,3 +1,4 @@
 *.pyc
-
+H_Fighter_latest/lib/__pycache__/*
+H_Fighter_latest/data/saved/brains/*
 H_Fighter_latest/data/saved/room.txt

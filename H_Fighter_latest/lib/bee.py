@@ -440,7 +440,7 @@ class Bee(physical.Physical):
 		test.add_sticky("bee:update:thinking")
 		if self.timesincelastthought > self.responsetime:
 			test.add_sticky("bee:update:thinking:inputs")
-			test.add_sticky("bee:update:thinking:inputs:1")
+			test.add_sticky("bee:update:thinking:inputs:collection")
 			test.record()
 			self.timesincelastthought -= self.responsetime
 
@@ -485,8 +485,8 @@ class Bee(physical.Physical):
 
 			#go = time.time()
 			#t = [math.sin(go), math.sin(go/2.3), math.sin(go)%1.5]
-			test.remove_sticky("bee:update:thinking:inputs:1")
-			test.add_sticky("bee:update:thinking:inputs:2")
+			test.remove_sticky("bee:update:thinking:inputs:collection")
+			test.add_sticky("bee:update:thinking:inputs:actually wraparound")
 			#center = matrix([graphics.world_w/2, graphics.world_h/2])
 
 			if STALK_CAMERA:
@@ -500,8 +500,8 @@ class Bee(physical.Physical):
 				disp_to_p[0,1] %= graphics.world_h
 				disp_to_p -= graphics.world_center
 
-			test.remove_sticky("bee:update:thinking:inputs:2")
-			test.add_sticky("bee:update:thinking:inputs:2.5")
+			test.remove_sticky("bee:update:thinking:inputs:actually wraparound")
+			test.add_sticky("bee:update:thinking:inputs:player offset")
 			player_sight_scale = 0.02
 			disp_to_p *= player_sight_scale
 			dist = linalg.norm(disp_to_p)
@@ -516,8 +516,8 @@ class Bee(physical.Physical):
 
 			#dispx, dispy = tuple(array(disp_to_p)[0])
 			#BE REALLY CAREFUL WHEN DIVIDING THIS BY STUFF THEY ARE INTEGERS
-			test.remove_sticky("bee:update:thinking:inputs:2.5")
-			test.add_sticky("bee:update:thinking:inputs:3")
+			test.remove_sticky("bee:update:thinking:inputs:player offset")
+			test.add_sticky("bee:update:thinking:inputs:packaging and nodetags")
 
 			disps = [disp_to_p[0,0], disp_to_p[0,1]]
 
@@ -530,21 +530,21 @@ class Bee(physical.Physical):
 			
 			inputs = disps + [1 - distance for distance in infoz] + [self.health / settings[MAX_HEALTH]] + [expit(self.vxy[0,0]), expit(self.vxy[0,1])]# 1
 			
-			self.brain.nodetags[(0,0)] = "verbatim", "player x"
-			self.brain.nodetags[(0,1)] = "verbatim", "player y"
-			i = 2
-			for vector in self.eyepoints:
-				self.brain.nodetags[(0,i)] = "vector", vector
-				i+=1
-			self.brain.nodetags[(0,i)] = "verbatim", "health"
-			i+=1
-			self.brain.nodetags[(0,i)] = "verbatim", "x velocity"
-			i+=1
-			self.brain.nodetags[(0,i)] = "verbatim", "y velocity"
-			i+=1
+			# self.brain.nodetags[(0,0)] = "verbatim", "player x"
+			# self.brain.nodetags[(0,1)] = "verbatim", "player y"
+			# i = 2
+			# for vector in self.eyepoints:
+			# 	self.brain.nodetags[(0,i)] = "vector", vector
+			# 	i+=1
+			# self.brain.nodetags[(0,i)] = "verbatim", "health"
+			# i+=1
+			# self.brain.nodetags[(0,i)] = "verbatim", "x velocity"
+			# i+=1
+			# self.brain.nodetags[(0,i)] = "verbatim", "y velocity"
+			# i+=1
 
 
-			test.remove_sticky("bee:update:thinking:inputs:3")
+			test.remove_sticky("bee:update:thinking:inputs:packaging and nodetags")
 			#inputs += [self.friends[0,0], self.friends[0,1], self.friendsrelpos[0,0], self.friendsrelpos[0,1]] # 4
 			
 			test.remove_sticky("bee:update:thinking:inputs")
