@@ -1,7 +1,7 @@
 bees-bees-bees
 ==============
 ![screenshot from game](https://raw.githubusercontent.com/yeahpython/bees-bees-bees/master/bees_screenshot_2.png)
-Features:  
+####Features:  
 * a modular way to specify the structure of neural networks
 * a custom physics engine
 * a fun stretchy player
