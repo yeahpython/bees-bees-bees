@@ -1,6 +1,6 @@
 bees-bees-bees
 ==============
-![screenshot from game](http://stanford.edu/~tommyli/beeees.png)
+![screenshot from game](https://raw.githubusercontent.com/yeahpython/bees-bees-bees/master/bees_screenshot_2.png)
 A game where adversaries have truly evolving intelligence
 
 Features:
