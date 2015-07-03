@@ -130,5 +130,5 @@ p43
 I6000
 sS'Speed Payoff'
 p44
-F0.03
+F0.0
 s.

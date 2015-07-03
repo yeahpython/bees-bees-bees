@@ -613,14 +613,35 @@ class Room(object):
 
 		if TIME_INITIALIZATION: print "convexes took", time.time() - convexstarttime, "seconds"
 
+	# def pointcheck(self, point):
+	# 	'''true if given tuple is solid'''
+	# 	x, y = point[0] % self.collisionfield.get_width(),point[1] %self.collisionfield.get_height()
+	# 	if not isinstance(x, int) or not isinstance(y, int):
+	# 		print "watch out, pointcheck wants the inputs to be integers!"
+	# 		print "type(", x, ")", "aint an integer, it's", type(x)
+	# 	#coloratpoint = self.collisionfield.get_at((x, y))
+	# 	return bool(self.pixels[x, y])
+
 	def pointcheck(self, point):
-		'''true if given tuple is solid'''
 		x, y = point[0] % self.collisionfield.get_width(),point[1] %self.collisionfield.get_height()
-		if not isinstance(x, int) or not isinstance(y, int):
-			print "watch out, pointcheck wants the inputs to be integers!"
-			print "type(", x, ")", "aint an integer, it's", type(x)
-		#coloratpoint = self.collisionfield.get_at((x, y))
-		return bool(self.pixels[x, y])
+		col, row = x / bw, y / bh
+		dx, dy = x % bw, y % bw
+		char = self.lines[row][col]
+		if char == " ":
+			return False
+		elif char == "#":
+			return True
+		elif char == "Q":
+			## will not work if bw != bh
+			return dx + dy < bw
+		elif char == "E":
+			return dy < dx
+		elif char == "Z":
+			return dy > dx
+		elif char == "C":
+			return dx + dy > bw
+		else:
+			return False
 
 	def reduce_sides(self):
 		if TIME_INITIALIZATION: sidestarttime = time.time()
@@ -716,7 +737,7 @@ class Room(object):
 						if v:
 							#ex, ey = k[0,0], k[0,1]
 							test.backgroundmarkers.append(( (ex,ey), (k[0,0], k[0,1])))
-							#test.backgroundpointmarkers.append((ex, ey))
+							test.backgroundpointmarkers.append((k[0,0], k[0,1]))
 
 					'''draw box'''
 					p = ( (x+0.4)*bw, (y+0.4)*bh)

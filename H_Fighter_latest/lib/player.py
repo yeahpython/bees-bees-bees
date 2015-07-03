@@ -74,8 +74,18 @@ class Player(physical.Physical):
 			#self.radius = 40
 			#self.prevrad = 40
 
-	def shoot(self):
-		b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix([0.4 * self.going_right, 0.0]))
+	def shoot(self, direction = None):
+
+		
+		if self.lastnormal != None:
+			bullet_direction = self.lastnormal * 0.4
+		else:
+			bullet_direction = matrix([0.0, -0.4])
+
+		if direction != "up":
+			bullet_direction *= matrix([[0, 1],[-1, 0]]) * self.going_right
+
+		b = bullet.Bullet(self, self.room, direction = bullet_direction)
 		#b = bullet.Bullet(self.room.bees[0], self, self.room, direction = matrix(0.1 * numpy.random.random((1,2)) - 0.05))
 		b.xy = self.xy * 1
 		self.room.bullets.append(b)
@@ -130,7 +140,7 @@ class Player(physical.Physical):
 		self.counter2 += 1
 		
 
-		if key_states[pygame.K_UP]:
+		if key_states[pygame.K_s]:
 			self.lastnormal = None
 			if self.feetSupported:
 				self.jetpackfuel = 200
@@ -148,7 +158,7 @@ class Player(physical.Physical):
 
 		#modify velocity
 		'''
-		if key_states[pygame.K_UP] and self.grounded:
+		if key_states[pygame.K_s] and self.grounded:
 			#jv = jumpspeed * self.normals[0] * -1
 			jv = jumpvel#jumpspeed * self.normals[0]
 			self.vxy += jv# jumpspeed*matrix(self.testvectors[0])/linalg.norm(self.testvectors[0])#jumping
@@ -187,7 +197,7 @@ class Player(physical.Physical):
 		test.remove_sticky('update player 1')
 		
 		'''
-		if self.feetSupported and not (key_states[pygame.K_LEFT] or key_states[pygame.K_RIGHT] or key_states[pygame.K_UP]):
+		if self.feetSupported and not (key_states[pygame.K_LEFT] or key_states[pygame.K_RIGHT] or key_states[pygame.K_s]):
 			self.vxy *= (1-friction)**dt # Friction
 			self.vxy *= 0
 			if key_states[pygame.K_LEFT]      : self.vxy += groundacc*self.normals[0]*matrix([[0, -1],[1, 0]])*dt# Left # used to be 
@@ -211,8 +221,8 @@ class Player(physical.Physical):
 					self.vxy += groundacc*self.normals[0]*matrix([[0, 1],[-1, 0]])*dt# Right
 				else:
 					self.vxy += groundacc*matrix([1, 0])*dt
-			elif not self.beepushes or key_states[pygame.K_UP]:
-				self.vxy *= 0.2
+			elif not self.beepushes or key_states[pygame.K_s]:
+				self.vxy *= 0.8
 		else:
 			self.vxy -= airresist*self.vxy*dt*linalg.norm(self.vxy) # Air resistance
 			if key_states[pygame.K_LEFT]     : self.vxy -= airacc*dt# Left 
@@ -228,7 +238,7 @@ class Player(physical.Physical):
 
 		#collision testing and further modification of position and velocity
 		#if self.grounded:
-		#	if self.beepushes or (key_states[pygame.K_LEFT] or key_states[pygame.K_RIGHT] or key_states[pygame.K_UP]):
+		#	if self.beepushes or (key_states[pygame.K_LEFT] or key_states[pygame.K_RIGHT] or key_states[pygame.K_s]):
 		#		self.grounded = 0
 		self.grounded = 0
 		num_deflections = 0

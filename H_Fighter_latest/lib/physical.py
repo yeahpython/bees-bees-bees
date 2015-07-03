@@ -208,7 +208,7 @@ class Physical(object):
 		mytop = int(self.xy[0,1] - radius) / bh
 		mybottom = int(self.xy[0,1] + radius) / bh
 
-		return ( (x,y) for x in range(myleft, myright + 1) for y in range(mytop, mybottom + 1))
+		return sorted([(x,y) for x in range(myleft, myright + 1) for y in range(mytop, mybottom + 1)], key = lambda (x,y): abs(self.xy[0,0] - (x + 0.5) * bw ) + abs(self.xy[0,1] - (y * 0.5) * bh ) )
 
 			
 	def draw(self, surface):

@@ -93,7 +93,8 @@ class Bee(physical.Physical):
 			self.brain = prebrain
 		else:
 			#self.brain = brain.Brain(11+36-8+2, [2])
-			self.brain = complexbrain.ComplexBrain(11+36-8+2, 15, 2)
+			#self.brain = complexbrain.ComplexBrain(11+36-8+2, 15, 2)
+			self.brain = complexbrain.ComplexBrain(13, 15, 2)
 		self.radius = radius
 		self.see_bullet = False
 		self.health = settings[MAX_HEALTH]
@@ -448,7 +449,7 @@ class Bee(physical.Physical):
 			LIDAR = 1
 			POINTCHECK = 2
 			TILES = 3
-			vision_mode = TILES
+			vision_mode = LIDAR
 			if vision_mode == LIDAR:
 				c = int(self.xy[0,0] / bw)
 				r = int(self.xy[0,1] / bw)
@@ -649,8 +650,8 @@ class Bee(physical.Physical):
 				self.vxy *= -1
 		else:
 			self.lastnonwall = self.xy * 1
-		if linalg.norm(self.prevpos - self.xy) < 200:
-			test.lines.append( ( (int(self.prevpos[0,0]), int(self.prevpos[0,1]) ), (int(self.xy[0,0]), int(self.xy[0,1]) ) ) )
+		#if linalg.norm(self.prevpos - self.xy) < 200:
+		#	test.lines.append( ( (int(self.prevpos[0,0]), int(self.prevpos[0,1]) ), (int(self.xy[0,0]), int(self.xy[0,1]) ) ) )
 
 		test.remove_sticky("bee:update:physics:teleport")
 

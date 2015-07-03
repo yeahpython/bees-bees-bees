@@ -16,7 +16,7 @@ from graphics import bw, bh, world_tw, world_th
 
 
 class Bullet(physical.Physical):
-	def __init__(self, bee, player, room, direction = matrix([random.random()*2-1,random.random()*2-1]) ):
+	def __init__(self, player, room, direction = matrix([1.0]) ):
 		super(Bullet, self).__init__(room)
 
 		self.visual_tag = 1
@@ -28,7 +28,6 @@ class Bullet(physical.Physical):
 			self.vxy /= linalg.norm(self.vxy)
 			self.vxy *= 0.1
 		self.initialspeed = linalg.norm(self.vxy)
-		self.bee = bee
 		self.player = player
 		self.randomize_position()
 		self.radius = 20
@@ -46,18 +45,11 @@ class Bullet(physical.Physical):
 	def hit_player(self):
 		if linalg.norm(self.xy - self.player.xy) < self.radius + self.player.radius:
 			self.player.randomize_color()
-			try:
-				self.bee.health = 1.0
-				self.bee.score += 1
-			except:
-				print "aww, I'm a bullet that hit the player but my bee died"
 			self.disappear()
 
 	def hit_bee(self,b):
-		if self.bee != b:
-			#if linalg.norm(self.xy - b.xy) < self.radius + b.radius:
-			b.health -= 2
-			b.die()
+		b.health -= 2
+		b.die()
 
 	def update(self, dt, key_states, key_presses):
 		super(Bullet, self).update(dt, key_states, key_presses)

@@ -13,9 +13,10 @@ def combine(c1,c2):
 
 class Convex(object):
 	'''should typically be used to describe tiles in the map'''
+	
 	def __init__(self, pointlist, offset, extranormals = []):
 		'''
-		pointlist is a list of matrices in the shape of horizontal vectors.
+		pointlist: is a list of matrices in the shape of horizontal vectors.
 		offset is one vector.
 		'''
 
@@ -37,24 +38,6 @@ class Convex(object):
 		self.usepoints = 0
 		self.name = None
 
-		# flipping it so that on a clock its between 1 o'clock and 6 o'clock inclusive
-		# strictly speaking, have x nonnegative and y > -1
-		'''
-		for n in normals:
-			if n[0,0] < 0 or n[0,1] == -1:
-				n *= -1
-		'''
-
-		# remove parallels from the normals
-		#betternormals = no_parallels2(normals, vector_slope)
-
-		#print "betternormals are", betternormals
-
-		# tells you the shadow of itself after you project it along each normal
-		#self.shadowDict = find_shadows(betternormals, self.points)
-
-		# there should be one normal per side plus one for every extra side
-		#self.shadowDict = find_shadows(normals, self.points)
 
 		# this is (-inf, max point shadow distance ) for each normal
 		self.shadowDict = find_shadows_2(normals, self.points)

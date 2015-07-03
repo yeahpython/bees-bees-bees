@@ -34,6 +34,8 @@ class Camera(object):
 		self.xy = self.tracker * 1
 
 	def follow_player_2(self, dt):
+		#if self.p.lastnormal == None:
+		#	return
 		self.v_bounded = self.h_bounded = not settings[WRAPAROUND_TRACKING]
 		disp = self.p.xy - self.xy
 		center = matrix([graphics.world_w/2, graphics.world_h/2])

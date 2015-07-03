@@ -560,10 +560,13 @@ def main_loop():
 			for bee in r.bees:
 				bee.madness = r.madness
 
-		if key_ups[pygame.K_LSHIFT] or key_ups[pygame.K_RSHIFT]:
-			p.shoot()
-
 		if key_ups[pygame.K_a]:
+			if key_states[pygame.K_UP]:
+				p.shoot("up")
+			else:
+				p.shoot()
+
+		if key_ups[pygame.K_x]:
 			r.stasis = not r.stasis
 
 		if key_ups[pygame.K_z]:
