@@ -125,7 +125,7 @@ def close(r):
 time_to_quit = False
 
 
-def handle_player_input(key_presses, key_ups, gameobjects):
+def handle_player_input(key_presses, key_ups, key_states, gameobjects):
     time_gap = False
     try:
         r = gameobjects["room"]
@@ -211,14 +211,19 @@ def handle_player_input(key_presses, key_ups, gameobjects):
     if key_ups[pygame.K_z]:
         print pygame.mouse.get_pos()
 
-    gameobjects["info_panel"].handle_event(pygame.mouse.get_pos(), "mouseover")
+    #gameobjects["info_panel"].handle_event(pygame.mouse.get_pos(), "mouseover")
 
     '''All mouse click stuff'''
     if clicks.mouseups[0]:
         event_taken = False
         if gameobjects["info_panel"].rect.collidepoint(pygame.mouse.get_pos()):
+            mx, my = pygame.mouse.get_pos()
+            x, y = mx - \
+                gameobjects["info_panel"].rect.x, my - \
+                gameobjects["info_panel"].rect.y
+
             event_taken = gameobjects["info_panel"].handle_event(
-                pygame.mouse.get_pos(), "click")
+                (x, y), "click")
 
         if not event_taken:
             for b in r.bees:
@@ -679,7 +684,8 @@ def main_loop():
 
         previous_key_states = key_states[:]
 
-        time_gap = handle_player_input(key_presses, key_ups, gameobjects)
+        time_gap = handle_player_input(
+            key_presses, key_ups, key_states, gameobjects)
 
         r = gameobjects["room"]
         c = gameobjects["camera"]

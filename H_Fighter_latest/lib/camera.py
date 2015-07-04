@@ -227,6 +227,15 @@ class Camera(object):
         self.r.visibles = (self.sight)
 
     def draw(self):
+
+        view = pygame.Rect(
+            graphics.border_thickness, graphics.top_space,
+            graphics.disp_w, graphics.disp_h)
+
+        view = pygame.Rect(
+            graphics.border_thickness, graphics.top_space,
+            graphics.screen_w, graphics.screen_h)
+
         # the circle that follows you around
         showtracker = 0
         if showtracker:
@@ -244,27 +253,23 @@ class Camera(object):
             pygame.draw.circle(
                 self.w, (255, 255, 255), (int(pos[0, 0]), int(pos[0, 1])), trackerradius, 1)
 
-        xmin = -(int(self.xy[0, 0] + graphics.screen_w / 2) / graphics.world_w)
-        ymin = -(int(self.xy[0, 1] + graphics.screen_h / 2) / graphics.world_h)
+        xmin = -(int(self.xy[0, 0] + view.w / 2) / graphics.world_w)
+        ymin = -(int(self.xy[0, 1] + view.h / 2) / graphics.world_h)
 
-        # the minimum value of x such that self.xy[0,0] + graphics.world_w*x + graphics.screen_w/2 > 0
+        # the minimum value of x such that
+        # self.xy[0,0] + graphics.world_w*x + graphics.screen_w/2 > 0
         # i.e. the camera window is still over the world
 
         xmax = int(
-            graphics.world_w - (self.xy[0, 0] - graphics.screen_w / 2)) / graphics.world_w
+            graphics.world_w - (self.xy[0, 0] - view.w / 2)) / graphics.world_w
         ymax = int(
-            graphics.world_h - (self.xy[0, 1] - graphics.screen_h / 2)) / graphics.world_h
+            graphics.world_h - (self.xy[0, 1] - view.h / 2)) / graphics.world_h
         # the maximum value of x such that self.xy[0,0] + graphics.world_w*x -
         # graphics.screen_w/2 < graphics.world_w
 
         for x in range(xmin, xmax + 1):
             for y in range(ymin, ymax + 1):
-                r = pygame.Rect((0, 0), graphics.disp_size)
+                r = pygame.Rect((0, 0), view.size)
                 r.centerx = self.xy[0, 0] + graphics.world_w * x
                 r.centery = self.xy[0, 1] + graphics.world_h * y
-                self.s.blit(
-                    self.w, (graphics.border_thickness, graphics.top_space), r)
-
-        # for x in range(-1, 2):
-        #   for y in range(-1, 2):
-        #       self.s.blit(self.w, (graphics.border_thickness, graphics.top_space), self.recs[x][y])
+                self.s.blit(self.w, view.topleft, r)

@@ -1,5 +1,8 @@
 import pygame
-from game_settings import settings, want_bools, want_ints, min_val, max_val
+import graphics
+from game_settings import settings, want_bools, want_ints, min_val, max_val, problem_with_setting, save_settings
+from ui import getString
+import messages
 
 
 class Panel(object):
@@ -60,6 +63,10 @@ class Panel(object):
 
 class StackingPanel(Panel):
 
+    def __init__(self, x, y, width, height):
+        super(StackingPanel, self).__init__(x, y, width, height)
+        self.surface.set_colorkey((0, 0, 0))
+
     def update(self):
         modified = super(StackingPanel, self).update_children()
         modified = modified or self.needs_update
@@ -69,15 +76,25 @@ class StackingPanel(Panel):
             h = 0
             for child in self.children:
                 child.rect.topleft = left, top
-                left += child.rect.width
+                left += child.rect.width + 5
                 if child.rect.h > h:
                     h = child.rect.h
             newsize = (left, h)
             if self.surface.get_size() != newsize:
                 self.surface = pygame.Surface(newsize)
+                self.surface.set_colorkey((0, 0, 0))
+                self.rect.size = self.surface.get_size()
+                self.rect.top = graphics.screen_h - self.rect.h
+                self.rect.left = 0
             for child in self.children:
                 child.draw_to(self.surface)
+
+        self.needs_update = False
         return modified
+
+    def draw_to(self,  target_surface):
+        self.update()
+        target_surface.blit(self.surface, self.rect.topleft, )
 
 
 class ShrinkingPanel(Panel):
@@ -87,7 +104,7 @@ class ShrinkingPanel(Panel):
 
         if modified:
             self.shrink()
-            self.surface.fill((0, 0, 0))
+            self.surface.fill((50, 50, 50))
             for child in self.children:
                 child.draw_to(self.surface)
             print "refreshed shrinking panel."
@@ -98,6 +115,13 @@ class ShrinkingPanel(Panel):
             mega_rect = self.children[0].rect.unionall(
                 [c.rect for c in self.children])
             x, y, w, h = mega_rect.x, mega_rect.y, mega_rect.w, mega_rect.h
+
+            # making the rectangle a little larger
+            x -= 5
+            y -= 5
+            w += 10
+            h += 10
+
             self.rect.x += x
             self.rect.y += y
             self.rect.w = w
@@ -141,7 +165,61 @@ class SettingButton(Panel):
                 if settings[self.setting] > max_val[self.setting]:
                     settings[self.setting] = min_val[self.setting]
             else:
-                print "setting", self.setting, "was clicked"
+                messages.colorBackground()
+                # messages.say("Pick a new value", down = 4)
+
+                allowed_keys = range(
+                    pygame.K_0, pygame.K_9 + 1)
+                allowed_keys += [pygame.K_PERIOD]
+                allowed_keys += [pygame.K_e]
+                allowed_keys += [pygame.K_MINUS]
+
+                '''loop is for error checking'''
+                while True:
+                    # message = messages.smallfont.render("Set new value for '%s'" % toChange, 1, [255, 255, 255])
+                    # pygame.display.get_surface().blit(message, (600, 15 * (usedindex + 3)))
+                    m = "Set new value for '%s'" % self.setting
+                    position = pygame.Rect(0, 0, 290, 30)
+                    # position.x = 600 #Leaning right
+                    position.centerx = graphics.screen_w / 2
+                    # position.y = 15 * (usedindex + 4.3)
+                    # Leaning up
+                    position.centery = graphics.screen_h / 2
+                    out = getString(
+                        allowed_keys, str(settings[self.setting]), textpos=position, message=m)
+                    # out = getString(allowed_keys, str(settings[toChange]))
+
+                    # quit
+                    if out == -1:
+                        break
+
+                    # cancel
+                    elif out == 0:
+                        break
+
+                    try:
+                        val = 0
+                        if "." in out:
+                            val = float(out)
+                        else:
+                            val = int(out)
+
+                        problems = problem_with_setting(
+                            self.setting, val)
+                        if problems:
+                            messages.colorBackground()
+                            messages.say(problems, down=4)
+                            continue
+
+                        settings[self.setting] = val
+                        break
+
+                    except:
+                        messages.colorBackground()
+                        messages.say(
+                            "Error. Pick a new value", down=4)
+
+                save_settings()
             self.needs_update = True
             event_taken = True
         return event_taken
