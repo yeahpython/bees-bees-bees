@@ -1,6 +1,7 @@
 from numpy import array, linalg, matrix
 from ui import getString, waitForEnter, waitForKey, getChoiceUnbounded
 from game_settings import *
+import game_settings
 import os
 import random
 import copy
@@ -15,6 +16,7 @@ import topbar
 import zoo
 import clicks
 import game_progress
+from panel import MessagePanel, Panel, SettingButton, ShrinkingPanel, StackingPanel
 import familytree
 import species_visualization
 import pygame
@@ -209,411 +211,350 @@ def handle_player_input(key_presses, key_ups, gameobjects):
     if key_ups[pygame.K_z]:
         print pygame.mouse.get_pos()
 
+    gameobjects["info_panel"].handle_event(pygame.mouse.get_pos(), "mouseover")
+
     '''All mouse click stuff'''
     if clicks.mouseups[0]:
-        for b in r.bees:
-            b.skipupdate = True
-        options = ["Move to another map", "Random 60 x 25", "Random 35 x 35", "Random 60 x 60", "Examine bee",
-                   "Save bees", "Extinction", "Load bees", "Delete bees", "Tweak variables", "Modify map", "View Shortcuts", "quit"]
-        choice = getChoiceUnbounded(
-            "select option", options, allowcancel=1)
+        event_taken = False
+        if gameobjects["info_panel"].rect.collidepoint(pygame.mouse.get_pos()):
+            event_taken = gameobjects["info_panel"].handle_event(
+                pygame.mouse.get_pos(), "click")
 
-        if choice != "cancel":
-            if choice == "quit":
-                time_to_quit = True
+        if not event_taken:
+            for b in r.bees:
+                b.skipupdate = True
+            options = ["Move to another map", "Random 60 x 25", "Random 35 x 35", "Random 60 x 60", "Examine bee",
+                       "Save bees", "Extinction", "Load bees", "Delete bees", "Tweak variables", "Modify map", "View Shortcuts", "quit"]
+            choice = getChoiceUnbounded(
+                "select option", options, allowcancel=1)
 
-            elif choice in ["Move to another map", "Random 60 x 25", "Random 35 x 35", "Random 60 x 60"]:
-                level = choice
-                if choice == "Move to another map":
-                    level = enteredlevel()
-                if level == "quit":
-                    time_to_quit = True
-
-                if level != "cancel":
-                    test.clear_tests()
-                    r.topbar = 0
-                    world, t, r2 = preparelevel(screen, level)
-                    p.topbar = 0
-                    p = player.Player(r2)
-                    r2.roomnumber = r.roomnumber + 1
-                    r2.bees = r.bees
-                    r2.deadbees = r.deadbees
-
-                    r = r2
-                    h.savedata()
-                    # h = zoo.Beehive()
-                    h = zoo.Beehive(
-                        "the fact that any argument is passed here means that I'll load saved bees")
-                    c = camera.Camera(
-                        p, world, screen, r)
-                    c.xy = 1 * p.xy
-                    r.h = h
-
-                    for b in r.bees + r.deadbees:
-                        b.lastnonwall = matrix([[-1.0, 0.0]])
-                        b.madness = 0
-                        b.room = r
-                        b.player = p
-                        b.randomize_position()
-
-            elif choice == "Extinction":
-                if getChoiceUnbounded("Kill all bees?", ["no", "yes"], allowcancel=1) == "yes":
-                    for b in r.bees:
-                        b.health = -20
-                    for b in r.bees + r.deadbees:
-                        b.dead = 2
-                    t.data = []
-
-            elif choice == "Examine bee":
-                '''this thing lets you examine the closest bee to you'''
-                if r.bees:
-                    minbee = r.bees[0]
-                    for b in r.bees:
-                        if linalg.norm(b.xy - p.xy) < linalg.norm(minbee.xy - p.xy):
-                            minbee = b
-                    for x in r.bees + r.food + [p] + r.bullets:
-                        x.draw(world)
-                    c.draw()
-                    pygame.display.flip()
-
-                    while not time_to_quit:  # quit should work fine here
-                        choice = getChoiceUnbounded("Examining nearest bee...what feature?", [
-                                                    "Neural Network", "Movement"], allowcancel=True)
-
-                        if choice == "Neural Network":
-                            command = minbee.show_brain(world)
-                            if command:
-                                return
-
-                        elif choice == "Movement":
-                            c.draw()
-                            messages.say("Loading", down=1)
-                            pygame.display.flip()
-                            minbee.visualize_intelligence(world, c)
-                            minbee.sample_path(world)
-                            c.draw()
-                            pygame.display.flip()
-
-                        elif choice == "cancel":
-                            done = 1
-                            break
-
-                        elif choice == "quit":
-                            time_to_quit = True
-
-            elif choice == "Save bees":
-                beemap = {}
-                beenames = []
-
-                for b in r.bees:
-                    label = b.firstname + " " + b.name
-                    beemap[label] = b
-                    beenames.append(label)
-
-                choice = getChoiceUnbounded(
-                    "Pick a bee", beenames, allowcancel=True)
-
+            if choice != "cancel":
                 if choice == "quit":
                     time_to_quit = True
 
-                elif choice != "cancel":
-                    b = beemap[choice]
-                    # messages.colorBackground()
-                    # messages.say("Pick a new name for the bee", down = 4)
-                    rename = b.name
-                    '''loop is for error checks'''
-                    while not time_to_quit:
-                        rename = getString(
-                            string=b.name, message="Pick a new name for the bee")
+                elif choice in ["Move to another map", "Random 60 x 25", "Random 35 x 35", "Random 60 x 60"]:
+                    level = choice
+                    if choice == "Move to another map":
+                        level = enteredlevel()
+                    if level == "quit":
+                        time_to_quit = True
 
-                        # quit
-                        if rename == -1:
-                            break
-                        # cancel
-                        elif rename == 0:
-                            break
-                        elif any(specimen[0] == rename for specimen in h.specimens):
-                            messages.colorBackground()
-                            messages.say(
-                                "Name taken. Pick a new name for the bee", down=4)
-                            continue
-                        else:
-                            b.name = rename
-                            break
-                    h.save_bee(b)
-                    h.savedata()
+                    if level != "cancel":
+                        test.clear_tests()
+                        r.topbar = 0
+                        world, t, r2 = preparelevel(screen, level)
+                        p.topbar = 0
+                        p = player.Player(r2)
+                        r2.roomnumber = r.roomnumber + 1
+                        r2.bees = r.bees
+                        r2.deadbees = r.deadbees
 
-            elif choice == "Load bees":
-                loadedbeenames = []
-                for b in h.specimens:
-                    loadedbeenames.append(b[0])
+                        r = r2
+                        h.savedata()
+                        # h = zoo.Beehive()
+                        h = zoo.Beehive(
+                            "the fact that any argument is passed here means that I'll load saved bees")
+                        c = camera.Camera(
+                            p, world, screen, r)
+                        c.xy = 1 * p.xy
+                        r.h = h
 
-                loadedbeenames.append("done")
-                loadedbeenames = loadedbeenames[-1::-1]
-                i = 0
-                while not time_to_quit:
-                    name = getChoiceUnbounded(
-                        "Loaded " + str(i) + " bees", loadedbeenames, allowcancel=True)
-                    if name in ["done", "quit", "cancel"]:
-                        break
-                    else:
-                        i += 1
-                        b = h.make_bee(name, r, p)
-                        r.bees.append(b)
-                        b.flash = 50
-                        b.xy[0, 0] = p.xy[0, 0]
+                        for b in r.bees + r.deadbees:
+                            b.lastnonwall = matrix([[-1.0, 0.0]])
+                            b.madness = 0
+                            b.room = r
+                            b.player = p
+                            b.randomize_position()
 
-            elif choice == "Delete bees":
-                i = 0
-                message = "Choose a bee to delete"
-                while not time_to_quit:
-                    indexfromname = {}
+                elif choice == "Extinction":
+                    if getChoiceUnbounded("Kill all bees?", ["no", "yes"], allowcancel=1) == "yes":
+                        for b in r.bees:
+                            b.health = -20
+                        for b in r.bees + r.deadbees:
+                            b.dead = 2
+                        t.data = []
+
+                elif choice == "Examine bee":
+                    '''this thing lets you examine the closest bee to you'''
+                    if r.bees:
+                        minbee = r.bees[0]
+                        for b in r.bees:
+                            if linalg.norm(b.xy - p.xy) < linalg.norm(minbee.xy - p.xy):
+                                minbee = b
+                        for x in r.bees + r.food + [p] + r.bullets:
+                            x.draw(world)
+                        c.draw()
+                        pygame.display.flip()
+
+                        while not time_to_quit:  # quit should work fine here
+                            choice = getChoiceUnbounded("Examining nearest bee...what feature?", [
+                                                        "Neural Network", "Movement"], allowcancel=True)
+
+                            if choice == "Neural Network":
+                                command = minbee.show_brain(world)
+                                if command:
+                                    return
+
+                            elif choice == "Movement":
+                                c.draw()
+                                messages.say("Loading", down=1)
+                                pygame.display.flip()
+                                minbee.visualize_intelligence(world, c)
+                                minbee.sample_path(world)
+                                c.draw()
+                                pygame.display.flip()
+
+                            elif choice == "cancel":
+                                done = 1
+                                break
+
+                            elif choice == "quit":
+                                time_to_quit = True
+
+                elif choice == "Save bees":
+                    beemap = {}
+                    beenames = []
+
+                    for b in r.bees:
+                        label = b.firstname + " " + b.name
+                        beemap[label] = b
+                        beenames.append(label)
+
+                    choice = getChoiceUnbounded(
+                        "Pick a bee", beenames, allowcancel=True)
+
+                    if choice == "quit":
+                        time_to_quit = True
+
+                    elif choice != "cancel":
+                        b = beemap[choice]
+                        # messages.colorBackground()
+                        # messages.say("Pick a new name for the bee", down = 4)
+                        rename = b.name
+                        '''loop is for error checks'''
+                        while not time_to_quit:
+                            rename = getString(
+                                string=b.name, message="Pick a new name for the bee")
+
+                            # quit
+                            if rename == -1:
+                                break
+                            # cancel
+                            elif rename == 0:
+                                break
+                            elif any(specimen[0] == rename for specimen in h.specimens):
+                                messages.colorBackground()
+                                messages.say(
+                                    "Name taken. Pick a new name for the bee", down=4)
+                                continue
+                            else:
+                                b.name = rename
+                                break
+                        h.save_bee(b)
+                        h.savedata()
+
+                elif choice == "Load bees":
                     loadedbeenames = []
-                    for index, b in enumerate(h.specimens):
-                        name = b[0]
-                        loadedbeenames.append(name)
-                        indexfromname[name] = index
+                    for b in h.specimens:
+                        loadedbeenames.append(b[0])
+
                     loadedbeenames.append("done")
                     loadedbeenames = loadedbeenames[-1::-1]
-
-                    if i:
-                        message = "Deleted " + str(i) + " bees"
-                    name = getChoiceUnbounded(
-                        message, loadedbeenames, allowcancel=True)
-                    if name in ["quit", "done", "cancel"]:
-                        break
-                    else:
-                        confirm = getChoiceUnbounded(
-                            "Delete %s?" % name, ["no", "yes"], allowcancel=True)
-                        if confirm != "yes":
-                            continue
-                        i += 1
-                        indextoremove = indexfromname[name]
-                        h.specimens = h.specimens[
-                            :indextoremove] + h.specimens[(indextoremove + 1):]
-
-            elif choice == "Tweak variables":
-                families = {
-                    "Life and Death":
-                    (ACID,
-                     TOO_SLOW,
-                     HEALTH_LOSS_RATE,
-                     HEALTH_GAIN,
-                     MAXIMUM_BEES,
-                     SLOWNESS_PENALTY,
-                     COST_OF_JUMP,
-                     SPEED_PAYOFF,
-                     MAX_HEALTH),
-
-                    "Mutation":
-                    (MUTATION_CHANCES,
-                     SCALING_MUTATION,
-                     ADDITIVE_MUTATION_RATE,
-                     INVERT_MUTATION_RATE,
-                     OFFSPRING_MUTATION_RATE,
-                     EYE_MUTATION_RANGE,),
-
-                    "Topology / Physics":
-                    (STING_REPULSION,
-                     AUTOMATIC_EVASION,
-                     SWARMING_PEER_PRESSURE,
-                     WRAPAROUND_TRACKING,
-                     CREATURE_MODE,
-                     STICKY_WALLS,
-                     GRAVITY),
-
-                    "Random Map Generation":
-                    (
-                        GENERATE_RANDOM_MAP,
-                        RANDOM_TILE_DENSITY,
-                        CONGEAL_THOROUGHNESS,
-                        RANDOM_MAP_LOW,
-                        RANDOM_MAP_HIGH,
-                        RANDOM_MAP_RUNS,
-                        RANDOM_MAP_RADIUS,),
-
-                    "Visual":
-                    (JUICINESS,
-                     SHOW_EYES,
-                     SHOW_NAMES,
-                     BEE_STYLE,
-                     SPECIES_STYLE),
-
-                    "Family Tree":
-                    (TREE_THICKNESS,
-                     TREE_V_SPACING,
-                     TREE_H_SPACING,
-                     TREE_COLOR_VARIATION,
-                     TREE_UPDATE_TIME),
-
-                    "Brain Type":
-                    (SENSITIVITY_TO_PLAYER,
-                     BRAIN_BIAS,
-                     MEMORY_STRENGTH,
-                     BRAIN_ACTIVATION),
-                }
-
-                miscsettings = copy.deepcopy(settings)
-                for family, entries in families.iteritems():
-                    for name in entries:
-                        if name in miscsettings:
-                            del miscsettings[name]
-
-                # miscsettings now has everything not represented by the
-                # others
-                if miscsettings:
-                    families["Misc."] = miscsettings.keys()
-
-                '''picking kinds of variables'''
-                while not time_to_quit:
-                    family = getChoiceUnbounded(
-                        "What kind of variable?", families.keys(), allowcancel=1)
-                    if family == "cancel":
-                        break
-
-                    '''picking variable'''
+                    i = 0
                     while not time_to_quit:
-                        '''takes "name: value" string to "name".'''
-                        label_to_key = {
-                            key + ": " + str(settings[key]): key for key in families[family]}
-
-                        '''this is a bunch of informative labels'''
-                        options = [x for x in sorted(label_to_key.keys())]
-
-                        toChange = getChoiceUnbounded(
-                            "Pick a variable to modify", options, allowcancel=1)
-
-                        if toChange == "cancel":
+                        name = getChoiceUnbounded(
+                            "Loaded " + str(i) + " bees", loadedbeenames, allowcancel=True)
+                        if name in ["done", "quit", "cancel"]:
                             break
-                        toChange = label_to_key[toChange]
-                        if toChange in want_bools:
-                            settings[toChange] = not settings[toChange]
-                            continue
-                        elif toChange in want_ints and toChange in max_val and toChange in min_val:
-                            settings[toChange] += 1
-                            if settings[toChange] > max_val[toChange]:
-                                settings[toChange] = min_val[toChange]
-                            continue
                         else:
-                            '''we have the name of the variable we want to change now'''
+                            i += 1
+                            b = h.make_bee(name, r, p)
+                            r.bees.append(b)
+                            b.flash = 50
+                            b.xy[0, 0] = p.xy[0, 0]
 
-                            usedindex = 0
-                            for i, entry in enumerate(options):
-                                if entry == toChange:
-                                    usedindex = i
+                elif choice == "Delete bees":
+                    i = 0
+                    message = "Choose a bee to delete"
+                    while not time_to_quit:
+                        indexfromname = {}
+                        loadedbeenames = []
+                        for index, b in enumerate(h.specimens):
+                            name = b[0]
+                            loadedbeenames.append(name)
+                            indexfromname[name] = index
+                        loadedbeenames.append("done")
+                        loadedbeenames = loadedbeenames[-1::-1]
 
-                            # messages.colorBackground()
-                            #messages.say("Pick a new value", down = 4)
+                        if i:
+                            message = "Deleted " + str(i) + " bees"
+                        name = getChoiceUnbounded(
+                            message, loadedbeenames, allowcancel=True)
+                        if name in ["quit", "done", "cancel"]:
+                            break
+                        else:
+                            confirm = getChoiceUnbounded(
+                                "Delete %s?" % name, ["no", "yes"], allowcancel=True)
+                            if confirm != "yes":
+                                continue
+                            i += 1
+                            indextoremove = indexfromname[name]
+                            h.specimens = h.specimens[
+                                :indextoremove] + h.specimens[(indextoremove + 1):]
 
-                            allowed_keys = range(
-                                pygame.K_0, pygame.K_9 + 1)
-                            allowed_keys += [pygame.K_PERIOD]
-                            allowed_keys += [pygame.K_e]
-                            allowed_keys += [pygame.K_MINUS]
+                elif choice == "Tweak variables":
+                    families = game_settings.families
 
-                            '''loop is for error checking'''
-                            while not time_to_quit:
-                                #message = messages.smallfont.render("Set new value for '%s'" % toChange, 1, [255, 255, 255])
-                                #pygame.display.get_surface().blit(message, (600, 15 * (usedindex + 3)))
-                                m = "Set new value for '%s'" % toChange
-                                position = pygame.Rect(0, 0, 290, 30)
-                                # position.x = 600 #Leaning right
-                                position.centerx = graphics.screen_w / 2
-                                # position.y = 15 * (usedindex + 4.3)
-                                # Leaning up
-                                position.centery = graphics.screen_h / 2
-                                out = getString(
-                                    allowed_keys, str(settings[toChange]), textpos=position, message=m)
-                                #out = getString(allowed_keys, str(settings[toChange]))
+                    '''picking kinds of variables'''
+                    while not time_to_quit:
+                        family = getChoiceUnbounded(
+                            "What kind of variable?", families.keys(), allowcancel=1)
+                        if family == "cancel":
+                            break
 
-                                # quit
-                                if out == -1:
-                                    break
+                        '''picking variable'''
+                        while not time_to_quit:
+                            '''takes "name: value" string to "name".'''
+                            label_to_key = {
+                                key + ": " + str(settings[key]): key for key in families[family]}
 
-                                # cancel
-                                elif out == 0:
-                                    break
+                            '''this is a bunch of informative labels'''
+                            options = [x for x in sorted(label_to_key.keys())]
 
-                                try:
-                                    val = 0
-                                    if "." in out:
-                                        val = float(out)
-                                    else:
-                                        val = int(out)
+                            toChange = getChoiceUnbounded(
+                                "Pick a variable to modify", options, allowcancel=1)
 
-                                    problems = problem_with_setting(
-                                        toChange, val)
-                                    if problems:
+                            if toChange == "cancel":
+                                break
+                            toChange = label_to_key[toChange]
+                            if toChange in want_bools:
+                                settings[toChange] = not settings[toChange]
+                                continue
+                            elif toChange in want_ints and toChange in max_val and toChange in min_val:
+                                settings[toChange] += 1
+                                if settings[toChange] > max_val[toChange]:
+                                    settings[toChange] = min_val[toChange]
+                                continue
+                            else:
+                                '''we have the name of the variable we want to change now'''
+
+                                usedindex = 0
+                                for i, entry in enumerate(options):
+                                    if entry == toChange:
+                                        usedindex = i
+
+                                # messages.colorBackground()
+                                # messages.say("Pick a new value", down = 4)
+
+                                allowed_keys = range(
+                                    pygame.K_0, pygame.K_9 + 1)
+                                allowed_keys += [pygame.K_PERIOD]
+                                allowed_keys += [pygame.K_e]
+                                allowed_keys += [pygame.K_MINUS]
+
+                                '''loop is for error checking'''
+                                while not time_to_quit:
+                                    # message = messages.smallfont.render("Set new value for '%s'" % toChange, 1, [255, 255, 255])
+                                    # pygame.display.get_surface().blit(message, (600, 15 * (usedindex + 3)))
+                                    m = "Set new value for '%s'" % toChange
+                                    position = pygame.Rect(0, 0, 290, 30)
+                                    # position.x = 600 #Leaning right
+                                    position.centerx = graphics.screen_w / 2
+                                    # position.y = 15 * (usedindex + 4.3)
+                                    # Leaning up
+                                    position.centery = graphics.screen_h / 2
+                                    out = getString(
+                                        allowed_keys, str(settings[toChange]), textpos=position, message=m)
+                                    # out = getString(allowed_keys, str(settings[toChange]))
+
+                                    # quit
+                                    if out == -1:
+                                        break
+
+                                    # cancel
+                                    elif out == 0:
+                                        break
+
+                                    try:
+                                        val = 0
+                                        if "." in out:
+                                            val = float(out)
+                                        else:
+                                            val = int(out)
+
+                                        problems = problem_with_setting(
+                                            toChange, val)
+                                        if problems:
+                                            messages.colorBackground()
+                                            messages.say(problems, down=4)
+                                            continue
+
+                                        settings[toChange] = val
+                                        break
+
+                                    except:
                                         messages.colorBackground()
-                                        messages.say(problems, down=4)
-                                        continue
+                                        messages.say(
+                                            "Error. Pick a new value", down=4)
 
-                                    settings[toChange] = val
-                                    break
+                                save_settings()
 
-                                except:
-                                    messages.colorBackground()
-                                    messages.say(
-                                        "Error. Pick a new value", down=4)
+                                # for key, value in settings.iteritems():
+                                #   print key + ":", str(value)
+                        if family == "quit" or time_to_quit:
+                            time_to_quit = True
+                            break
 
-                            save_settings()
+                elif choice == "Modify map":
+                    messages.colorBackground()
+                    messages.say("This is where I would modify the map", 500)
 
-                            # for key, value in settings.iteritems():
-                            #   print key + ":", str(value)
-                    if family == "quit" or time_to_quit:
-                        time_to_quit = True
-                        break
+                elif choice == "View Shortcuts":
+                    messages.colorBackground()
+                    messagecount = 2
+                    if settings[SHOW_EYES]:
+                        messagecount = messages.say(
+                            "[r]: Hide eyes", down=messagecount)
+                    else:
+                        messagecount = messages.say(
+                            "[r]: Show eyes", down=messagecount)
 
-            elif choice == "Modify map":
-                messages.colorBackground()
-                messages.say("This is where I would modify the map", 500)
+                    if r.madness:
+                        messagecount = messages.say(
+                            "[m]: Don't draw trails", down=messagecount)
+                    else:
+                        messagecount = messages.say(
+                            "[m]: Draw trails", down=messagecount)
 
-            elif choice == "View Shortcuts":
-                messages.colorBackground()
-                messagecount = 2
-                if settings[SHOW_EYES]:
+                    if settings[GENERATE_RANDOM_MAP]:
+                        messagecount = messages.say(
+                            "[t]: Don't randomize maps when loading", down=messagecount)
+                    else:
+                        messagecount = messages.say(
+                            "[t]: Randomize maps when loading", down=messagecount)
+
+                    if r.stasis:
+                        messagecount = messages.say(
+                            "[a]: Resume deaths and births", down=messagecount)
+                    else:
+                        messagecount = messages.say(
+                            "[a]: Pause deaths and births", down=messagecount)
+
                     messagecount = messages.say(
-                        "[r]: Hide eyes", down=messagecount)
-                else:
-                    messagecount = messages.say(
-                        "[r]: Show eyes", down=messagecount)
+                        "[e]: Examine a random bee", down=messagecount)
 
-                if r.madness:
                     messagecount = messages.say(
-                        "[m]: Don't draw trails", down=messagecount)
-                else:
-                    messagecount = messages.say(
-                        "[m]: Draw trails", down=messagecount)
+                        "Click anywhere to continue", down=messagecount)
+                    waitForEnter(hidemessage=1)
 
-                if settings[GENERATE_RANDOM_MAP]:
-                    messagecount = messages.say(
-                        "[t]: Don't randomize maps when loading", down=messagecount)
-                else:
-                    messagecount = messages.say(
-                        "[t]: Randomize maps when loading", down=messagecount)
+            if time_to_quit:
+                print "Saving game very rapidly, whee"
+                game_progress.save_game(r)
+                return
 
-                if r.stasis:
-                    messagecount = messages.say(
-                        "[a]: Resume deaths and births", down=messagecount)
-                else:
-                    messagecount = messages.say(
-                        "[a]: Pause deaths and births", down=messagecount)
-
-                messagecount = messages.say(
-                    "[e]: Examine a random bee", down=messagecount)
-
-                messagecount = messages.say(
-                    "Click anywhere to continue", down=messagecount)
-                waitForEnter(hidemessage=1)
-
-        if time_to_quit:
-            print "Saving game very rapidly, whee"
-            game_progress.save_game(r)
-            return
-
-        screen.fill(graphics.background)
-        # This is to trick the computer into thinking no time has passed
-        time_gap = True
+            screen.fill(graphics.background)
+            # This is to trick the computer into thinking no time has passed
+            time_gap = True
     gameobjects["player"] = p
     gameobjects["room"] = r
     gameobjects["world"] = world
@@ -687,17 +628,36 @@ def main_loop():
 
     global time_to_quit
 
+    info_panel = StackingPanel(0, 0, graphics.screen_w, 300)
+    tile_height = 20
+    left = 0
+    top = 0
+    for family_name in game_settings.families:
+        family_panel = ShrinkingPanel(0, 0, 100, 100)
+        top = 0
+        family_panel.children.append(
+            MessagePanel(left, top, 150, tile_height, family_name))
+        top += tile_height + 10
+
+        for entry in game_settings.families[family_name]:
+            new_button = SettingButton(
+                left, top, 150, tile_height, entry, typeface=None)
+            top += tile_height
+            family_panel.children.append(new_button)
+        left += family_panel.rect.w
+        info_panel.children.append(family_panel)
+
     gameobjects = {
         "room": r,
         "player": p,
         "hive": h,
         "camera": c,
         "world": world,
-        "screen": screen
+        "screen": screen,
+        "info_panel": info_panel
     }
 
     while not close(r):  # Main game loop # Don't need cancel and quit works
-
         if time_to_quit:
             try:
                 print "Quitting indirectly at main loop. Saving room..."
@@ -822,6 +782,9 @@ def main_loop():
         test.add_sticky('main:drawing:camera')
         c.draw()
         test.remove_sticky('main:drawing:camera')
+
+        info_panel.draw_to(screen)
+
         '''
         seconds = pygame.time.get_ticks() / 1000
 
