@@ -82,7 +82,7 @@ p27
 I1
 sS'Mutation Chances'
 p28
-I1
+F0.9
 sS'Congeal Thoroughness'
 p29
 F0.4

@@ -22,6 +22,7 @@ RELU = 1
 
 class ComputationUnit(object):
     # parametrizes a family of operations on clusters.
+    # it is a container for matrices, not for vectors.
 
     def __init__(self, input_info, output_info, activation=EXPIT):
         # input_info is a list of name-size tuples
@@ -34,8 +35,20 @@ class ComputationUnit(object):
         for i in range(30):
             self.mutate()
 
+    def loginformation(self, clusters):
+        print "Logging brain cluster state."
+        print "inputs:"
+        for input_name, input_size in self.input_info:
+            print "--[", input_name, "]:", clusters[input_name][FINAL_ROW, :]
+        print "output:"
+        print "--[add]:", clusters[self.output_name][ADD_ROW, :]
+        print "--[multiply]:", clusters[self.output_name][MULTIPLY_ROW, :]
+        print "--[final]:", clusters[self.output_name][FINAL_ROW, :]
+
     # tried hard here to not require creation of additional arrays
     def compute(self, clusters):
+        # clusters are a dictionary of arrays of brain data.
+
         # this is where we leave the products of multiplications
         output_multiply_vector = clusters[self.output_name][MULTIPLY_ROW, :]
 
@@ -46,19 +59,16 @@ class ComputationUnit(object):
         # for each input to our block
         for input_name, input_size in self.input_info:
             input_vector = clusters[input_name][FINAL_ROW, :]
-            if np.isnan(input_vector).any():
-                raise Exception("Received input with nans.")
             # multiply
             dot(input_vector, self.matrices[input_name],
                 out=output_multiply_vector)
             # add
             output_add_vector += output_multiply_vector
 
-        if np.isnan(output_add_vector).any():
-            raise Exception("add vector produced nans.")
-
         # apply sigmoid function
         output_final_vector = clusters[self.output_name][FINAL_ROW, :]
+
+        np.clip(output_add_vector, -100, 100, out=output_add_vector)
 
         if (self.activation == EXPIT):
             expit(output_add_vector, out=output_final_vector)
@@ -70,8 +80,8 @@ class ComputationUnit(object):
             raise NotImplementedError("Invalid activation", self.activation)
 
         if np.isnan(output_final_vector).any():
-            print "Produced outputs with nans."
-            output_final_vector[:] = np.nan_to_num(output_final_vector)
+            self.loginformation(clusters)
+            raise Exception("Activation produced nans.")
 
     def mutate(self):
         for n, m in self.matrices.iteritems():
@@ -91,8 +101,8 @@ class ComplexBrain(object):
             CLUSTER_OUTPUT: matrix(zeros((N_BLOCKS, self.n_outputs)))
         }
 
-        unit_1 = self.set_up_unit((CLUSTER_INPUT, CLUSTER_INTERMEDIATE),
-                                  CLUSTER_INTERMEDIATE, activation=EXPIT)
+        unit_1 = self.set_up_unit((CLUSTER_INPUT,), CLUSTER_INTERMEDIATE,
+                                  activation=RELU)
         unit_2 = self.set_up_unit((CLUSTER_INTERMEDIATE,), CLUSTER_OUTPUT,
                                   activation=EXPIT)
 
