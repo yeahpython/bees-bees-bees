@@ -41,7 +41,7 @@ screen_h = 800
 screen_size = (screen_w, screen_h)
 
 padding_left = 270
-padding_right = 0
+padding_right = 600
 padding_top = 0
 padding_bottom = 0
 

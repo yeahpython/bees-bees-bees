@@ -51,6 +51,7 @@ MEMORY_STRENGTH = "Memory Strength"
 BRAIN_ACTIVATION = "Brain Activation"
 
 # Family Tree
+SHOW_FAMILY_TREE = "Show Family Tree"
 TREE_V_SPACING = "Tree Vertical Spacing"
 TREE_H_SPACING = "Tree Horizontal Spacing"
 TREE_THICKNESS = "Tree Thickness"
@@ -128,6 +129,7 @@ settings = {
     SHOW_BACKGROUND_MARKERS: False,
     SHOW_TEXT: False,
     DEBUG_PANEL: True,
+    SHOW_FAMILY_TREE: True,
 }
 
 families = {
@@ -177,7 +179,8 @@ families = {
      SPECIES_STYLE),
 
     "Family Tree":
-    (TREE_THICKNESS,
+    (SHOW_FAMILY_TREE,
+     TREE_THICKNESS,
      TREE_V_SPACING,
      TREE_H_SPACING,
      TREE_COLOR_VARIATION,
@@ -214,6 +217,7 @@ if miscsettings:
     families["Misc."] = miscsettings.keys()
 
 want_bools = [
+    SHOW_FAMILY_TREE,
     GENERATE_RANDOM_MAP,
     SHOW_EYES,
     AUTOMATIC_EVASION,

@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import matrix, fmax, dot, zeros, tanh
+from numpy import matrix, fmax, dot, zeros, tanh, exp
 from scipy.special import expit
 import random
 
@@ -20,6 +20,7 @@ CLUSTER_OUTPUT = -1
 EXPIT = 0
 RELU = 1
 TANH = 2
+NORMALIZE = 3
 
 
 class ComputationUnit(object):
@@ -36,7 +37,7 @@ class ComputationUnit(object):
         self.dropout_matrices = {name: matrix(zeros((input_size, self.output_size)))
                                  for (name, input_size) in self.input_info}
         self.activation = activation
-        for i in range(120):
+        for i in range(10):
             self.mutate()
         self.counter = 0
         self.randomize_dropout(0.5)
@@ -54,27 +55,29 @@ class ComputationUnit(object):
     def randomize_dropout(self, p):
         for n, m in self.dropout_matrices.iteritems():
             s, t = m.shape
-            if random.random() < 0.5:
+            if random.random() < 0.3:
                 # use averaged model
                 for i in range(s):
                     for j in range(t):
-                        m[i, j] = self.matrices[n][i, j] * p
+                        m[i, j] = self.matrices[n][i, j]
             else:
+                scaling = 1 / p
                 # use dropout model
                 for i in range(s):
                     if random.random() < p:
                         for j in range(t):
-                            m[i, j] = self.matrices[n][i, j]
+                            m[i, j] = self.matrices[n][i, j] * scaling
                     else:
                         for j in range(t):
                             m[i, j] = 0
 
     # tried hard here to not require creation of additional arrays
-    def compute(self, clusters):
-        self.counter += 1
-        self.counter %= 50
-        if self.counter == 0:
-            self.randomize_dropout(0.5)
+    def compute(self, clusters, force_no_dropout=False):
+        if not force_no_dropout:
+            self.counter += 1
+            self.counter %= 50
+            if self.counter == 0:
+                self.randomize_dropout(0.5)
         # clusters are a dictionary of arrays of brain data.
 
         # this is where we leave the products of multiplications
@@ -88,8 +91,12 @@ class ComputationUnit(object):
         for input_name, input_size in self.input_info:
             input_vector = clusters[input_name][FINAL_ROW, :]
             # multiply
-            dot(input_vector, self.dropout_matrices[input_name],
-                out=output_multiply_vector)
+            if force_no_dropout:
+                dot(input_vector, self.matrices[input_name],
+                    out=output_multiply_vector)
+            else:
+                dot(input_vector, self.dropout_matrices[input_name],
+                    out=output_multiply_vector)
             # add
             output_add_vector += output_multiply_vector
 
@@ -102,6 +109,12 @@ class ComputationUnit(object):
             expit(output_add_vector, out=output_final_vector)
         elif (self.activation == TANH):
             tanh(output_add_vector, out=output_final_vector)
+        elif (self.activation == NORMALIZE):
+            output_final_vector[:] = output_add_vector
+            norm = np.linalg.norm(output_add_vector)
+            if norm != 0.0:
+                output_final_vector *= 1 / norm
+                output_final_vector *= 1 / (1 + exp(-norm))
         elif (self.activation == RELU):
             fmax(output_add_vector, 0.0, out=output_final_vector)
         elif (self.activation is None):
@@ -136,7 +149,7 @@ class ComplexBrain(object):
         unit_1 = self.set_up_unit((CLUSTER_INPUT,), CLUSTER_INTERMEDIATE,
                                   activation=RELU)
         unit_2 = self.set_up_unit((CLUSTER_INTERMEDIATE,), CLUSTER_OUTPUT,
-                                  activation=EXPIT)
+                                  activation=TANH)
 
         self.computation_units = [unit_1, unit_2]
 
@@ -153,10 +166,10 @@ class ComplexBrain(object):
         for name, vector in self.clusters.iteritems():
             vector += 1 * np.random.random(vector.shape) - 0.5
 
-    def compute(self, inputs):
+    def compute(self, inputs, force_no_dropout=False):
         self.set_inputs(matrix(inputs))
         for comp_unit in self.computation_units:
-            comp_unit.compute(self.clusters)
+            comp_unit.compute(self.clusters, force_no_dropout)
 
     def get_outputs(self, outputs):
         outputs[:, :] = self.clusters[CLUSTER_OUTPUT][FINAL_ROW, :]

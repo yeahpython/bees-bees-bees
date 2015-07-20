@@ -10,7 +10,7 @@ p3
 I00
 sS'Wraparound Tracking'
 p4
-I00
+I01
 sS'Show Help'
 p5
 I01
@@ -149,13 +149,16 @@ F0.05
 sS'Swarming Peer Pressure'
 p50
 I0
-sS'Tree Color Variation'
+sS'Show Family Tree'
 p51
+I00
+sS'Tree Color Variation'
+p52
 I50
 sS'Tile Maximum Neighbors'
-p52
+p53
 I6000
 sS'Speed Payoff'
-p53
+p54
 F0.1
 s.

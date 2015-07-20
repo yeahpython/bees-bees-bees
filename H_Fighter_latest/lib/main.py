@@ -608,7 +608,7 @@ def get_toggler(panel):
 
 
 def main_loop():
-    print "\n\n\n\n\n\n\n\n\n\n\n\n* * * * * NEW GAME * * * * *"
+    print "\n" * 12 + "* * * * * NEW GAME * * * * *"
 
     '''these things only need to happen once'''
     screen = pygame.display.get_surface()
@@ -651,7 +651,7 @@ def main_loop():
     c.jump_to_player()
 
     # myfamilytree = familytree.FamilyTree()
-    # myspeciesplot = species_visualization.SpeciesPlot()
+    myspeciesplot = species_visualization.SpeciesPlot()
 
     # Generating new bees
     # r.bees = h.preserved_bees(r, p)
@@ -761,35 +761,38 @@ def main_loop():
                 b.request_family_tree_update = 0
         test.remove_sticky('bee')
 
-        '''
-        test.add_sticky('tree') ##########
+        screen.fill([0, 0, 0])
 
-        #draw every frame, since the tree follows the player around
-        if settings[SPECIES_STYLE] == 3:
-            if not framecount % settings[TREE_UPDATE_TIME]:
-                myspeciesplot.update(r.bees + r.deadbees)
-                for b in r.deadbees:
-                    if b.dead == 2:
-                        r.deadbees.remove(b)
-            myspeciesplot.draw(world, (int(p.xy[0,0]) - myspeciesplot.w/2, int(p.xy[0,1]) - myspeciesplot.h/2))
+        if settings[SHOW_FAMILY_TREE]:
+            test.add_sticky('tree')
 
-        else:
-            #update once every few frames
-            if not framecount % settings[TREE_UPDATE_TIME]:
-                myspeciesplot.update(r.bees + r.deadbees)
-                myspeciesplot.draw(screen, (840,0))
+            # draw every frame, since the tree follows the player around
+            if settings[SPECIES_STYLE] == 3:
+                if not framecount % settings[TREE_UPDATE_TIME]:
+                    myspeciesplot.update(r.bees + r.deadbees)
+                    for b in r.deadbees:
+                        if b.dead == 2:
+                            r.deadbees.remove(b)
+                myspeciesplot.draw(
+                    world, (int(p.xy[0, 0]) - myspeciesplot.w / 2, int(p.xy[0, 1]) - myspeciesplot.h / 2))
 
+            else:
+                # update once every few frames
+                if not framecount % settings[TREE_UPDATE_TIME]:
+                    myspeciesplot.update(r.bees + r.deadbees)
+                    myspeciesplot.draw(screen, (840, 0))
 
-                for b in r.deadbees:
-                    if b.dead == 2:
-                        r.deadbees.remove(b)
+                    for b in r.deadbees:
+                        if b.dead == 2:
+                            r.deadbees.remove(b)
 
-        updatefamilytree = 0
+            updatefamilytree = 0
 
-        if updatefamilytree:
-            myfamilytree.update(r.bees)
-            myfamilytree.draw(screen, (840, 0))
-        '''
+            if updatefamilytree:
+                myfamilytree.update(r.bees)
+                myfamilytree.draw(screen, (840, 0))
+            test.remove_sticky('tree')
+
         test.add_sticky('room')
         # Necessarily comes afterwards so that the bees can see the player
         r.update()
@@ -826,7 +829,6 @@ def main_loop():
         # Make it seem like a slowed down version of 22fps if necessary
         dt = min(dt, 45)
         # print dt, "this is dt"
-
         test.add_sticky('main:drawing:camera')
         c.draw()
         test.remove_sticky('main:drawing:camera')
