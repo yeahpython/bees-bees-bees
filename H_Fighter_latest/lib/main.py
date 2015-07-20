@@ -16,7 +16,7 @@ import topbar
 import zoo
 import clicks
 import game_progress
-from panel import MessagePanel, Panel, SettingButton, ShrinkingPanel, StackingPanel
+from panel import MessagePanel, Panel, SettingButton, ShrinkingPanel, StackingPanel, StatisticsPanel
 import familytree
 import species_visualization
 import pygame
@@ -46,10 +46,11 @@ def preparelevel(screen, level):
     elif level == "Random 60 x 25":
         return prepareRandomLevel(screen, 60, 25)
     else:
-        graphics.load(os.path.join("data", "rooms", level))
+        levelname = os.path.join("data", "rooms", level)
+        graphics.load(levelname)
         world = pygame.Surface((graphics.world_w, graphics.world_h))
         t = topbar.TopBar(screen)
-        r = room.load(os.path.join("data", "rooms", level))
+        r = room.load(levelname)
         test.mark(r.background)
         r.topbar = t
         return world, t, r
@@ -118,11 +119,40 @@ def close(r):
     if pygame.event.get(pygame.QUIT):
         print "Trying to quit properly..."
         game_progress.save_game(r)
+        game_settings.save_settings()
         return True
     else:
         return False
 
 time_to_quit = False
+
+
+def move_to_level(level, gameobjects):
+    test.clear_tests()
+    gameobjects["room"].topbar = 0
+    gameobjects["world"], t, r2 = preparelevel(gameobjects["screen"], level)
+    gameobjects["player"].topbar = 0
+    gameobjects["player"] = player.Player(r2)
+    r2.roomnumber = gameobjects["room"].roomnumber + 1
+    r2.bees = gameobjects["room"].bees
+    r2.deadbees = gameobjects["room"].deadbees
+
+    gameobjects["room"] = r2
+    gameobjects["hive"].savedata()
+    # h = zoo.Beehive()
+    gameobjects["hive"] = zoo.Beehive(
+        "the fact that any argument is passed here means that I'll load saved bees")
+    gameobjects["camera"] = camera.Camera(
+        gameobjects["player"], gameobjects["world"], gameobjects["screen"], gameobjects["room"])
+    gameobjects["camera"].xy = 1 * gameobjects["player"].xy
+    gameobjects["room"].h = gameobjects["hive"]
+
+    for b in gameobjects["room"].bees + gameobjects["room"].deadbees:
+        b.lastnonwall = matrix([[-1.0, 0.0]])
+        b.madness = 0
+        b.room = gameobjects["room"]
+        b.player = gameobjects["player"]
+        b.randomize_position()
 
 
 def handle_player_input(key_presses, key_ups, key_states, gameobjects):
@@ -245,31 +275,27 @@ def handle_player_input(key_presses, key_ups, key_states, gameobjects):
                         time_to_quit = True
 
                     if level != "cancel":
-                        test.clear_tests()
-                        r.topbar = 0
-                        world, t, r2 = preparelevel(screen, level)
-                        p.topbar = 0
-                        p = player.Player(r2)
-                        r2.roomnumber = r.roomnumber + 1
-                        r2.bees = r.bees
-                        r2.deadbees = r.deadbees
+                        print "MAGIC LEVEL MOVE WHOA"
+                        gameobjects2 = {}
+                        gameobjects2["room"] = r
+                        gameobjects2["player"] = p
+                        gameobjects2["hive"] = h
+                        gameobjects2["camera"] = c
+                        gameobjects2["world"] = world
+                        gameobjects2["screen"] = screen
 
-                        r = r2
-                        h.savedata()
-                        # h = zoo.Beehive()
-                        h = zoo.Beehive(
-                            "the fact that any argument is passed here means that I'll load saved bees")
-                        c = camera.Camera(
-                            p, world, screen, r)
-                        c.xy = 1 * p.xy
-                        r.h = h
+                        move_to_level(level, gameobjects2)
 
-                        for b in r.bees + r.deadbees:
-                            b.lastnonwall = matrix([[-1.0, 0.0]])
-                            b.madness = 0
-                            b.room = r
-                            b.player = p
-                            b.randomize_position()
+                        try:
+                            r = gameobjects2["room"]
+                            p = gameobjects2["player"]
+                            c = gameobjects2["camera"]
+                            world = gameobjects2["world"]
+                            h = gameobjects2["hive"]
+                            screen = gameobjects2["screen"]
+                        except:
+                            raise Exception(
+                                "Missing gameobjects. Have following keys:", [key for key in gameobjects])
 
                 elif choice == "Extinction":
                     if getChoiceUnbounded("Kill all bees?", ["no", "yes"], allowcancel=1) == "yes":
@@ -569,6 +595,18 @@ def handle_player_input(key_presses, key_ups, key_states, gameobjects):
     return time_gap
 
 
+def get_toggler(panel):
+    def toggle_family():
+        if len(panel.children) > 1:
+            new_state = not panel.children[1].visible
+            for i in range(1, len(panel.children)):
+                panel.children[i].visible = new_state
+                print "set child's state to", new_state
+            panel.needs_update = True
+
+    return toggle_family
+
+
 def main_loop():
     print "\n\n\n\n\n\n\n\n\n\n\n\n* * * * * NEW GAME * * * * *"
 
@@ -633,25 +671,27 @@ def main_loop():
 
     global time_to_quit
 
-    info_panel = StackingPanel(0, 0, graphics.screen_w, 300)
-    tile_height = 20
+    info_panel = StackingPanel()
     left = 0
     top = 0
     for family_name in game_settings.families:
-        family_panel = ShrinkingPanel(0, 0, 100, 100)
+        family_panel = ShrinkingPanel(min_width=250)
         top = 0
-        family_panel.children.append(
-            MessagePanel(left, top, 150, tile_height, family_name))
-        top += tile_height + 10
+        title = MessagePanel(family_name)
+        family_panel.children.append(title)
+
+        title.onclick.append(get_toggler(family_panel))
+        top += 30
 
         for entry in game_settings.families[family_name]:
             new_button = SettingButton(
-                left, top, 150, tile_height, entry, typeface=None)
-            top += tile_height
+                entry, y=top, typeface="DejaVu Sans", bold=True, italic=True, visible=False)
+            top += 20
             family_panel.children.append(new_button)
         left += family_panel.rect.w
         info_panel.children.append(family_panel)
 
+    # we should never see reassignment of gameobjects!
     gameobjects = {
         "room": r,
         "player": p,
@@ -661,6 +701,8 @@ def main_loop():
         "screen": screen,
         "info_panel": info_panel
     }
+
+    info_panel.children.append(StatisticsPanel(gameobjects))
 
     while not close(r):  # Main game loop # Don't need cancel and quit works
         if time_to_quit:

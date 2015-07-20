@@ -1,4 +1,5 @@
 from numpy import matrix
+from random import randint
 
 bw = 30
 bh = 30
@@ -9,6 +10,10 @@ world_w = "lmfao"
 world_h = "chrchr"
 world_center = None
 world_size = (world_w, world_h)
+
+
+def random_color():
+    return randint(0, 255), randint(0, 255), randint(0, 255)
 
 
 def load(file_in):
@@ -35,13 +40,13 @@ screen_w = 1440
 screen_h = 800
 screen_size = (screen_w, screen_h)
 
-border_thickness = 0
-rightborder_thickness = 0  # 600
+padding_left = 270
+padding_right = 0
+padding_top = 0
+padding_bottom = 0
 
-top_space = border_thickness
-
-disp_w = screen_w - 2 * (border_thickness) - rightborder_thickness
-disp_h = screen_h - top_space - border_thickness
+disp_w = screen_w - padding_left - padding_right
+disp_h = screen_h - padding_top - padding_bottom
 disp_size = (disp_w, disp_h)
 
 

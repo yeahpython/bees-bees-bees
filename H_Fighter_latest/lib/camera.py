@@ -229,12 +229,8 @@ class Camera(object):
     def draw(self):
 
         view = pygame.Rect(
-            graphics.border_thickness, graphics.top_space,
+            graphics.padding_left, graphics.padding_top,
             graphics.disp_w, graphics.disp_h)
-
-        view = pygame.Rect(
-            graphics.border_thickness, graphics.top_space,
-            graphics.screen_w, graphics.screen_h)
 
         # the circle that follows you around
         showtracker = 0

@@ -60,6 +60,17 @@ TREE_UPDATE_TIME = "Tree Update Time"
 SPECIES_STYLE = "Species Visualization Style"
 BEE_STYLE = "Bee Style"
 
+# Test
+SHOW_SIDES = "Show Sides"
+SHOW_VECTORS = "Show Vectors"
+SHOW_INDICATORS = "Show Indicators"
+SHOW_LINES = "Show Lines"
+LINE_MEMORY = "Line Memory"
+SHOW_TILES = "Show Tiles"
+SHOW_BACKGROUND_MARKERS = "Show Background Markers"
+SHOW_TEXT = "Show Text"
+DEBUG_PANEL = "Show Panel Outlines"
+
 # Misc.
 SHOW_HELP = "Show Help"
 
@@ -108,6 +119,15 @@ settings = {
     TREE_UPDATE_TIME: 10,
     SPECIES_STYLE: 1,
     BEE_STYLE: 2,
+    SHOW_SIDES: False,
+    SHOW_VECTORS: False,
+    SHOW_INDICATORS: False,
+    SHOW_LINES: False,
+    LINE_MEMORY: 5,
+    SHOW_TILES: False,
+    SHOW_BACKGROUND_MARKERS: False,
+    SHOW_TEXT: False,
+    DEBUG_PANEL: True,
 }
 
 families = {
@@ -163,6 +183,18 @@ families = {
      TREE_COLOR_VARIATION,
      TREE_UPDATE_TIME),
 
+    "Test":
+    (SHOW_SIDES,
+     SHOW_VECTORS,
+     SHOW_INDICATORS,
+     SHOW_LINES,
+     LINE_MEMORY,
+     SHOW_TILES,
+     SHOW_BACKGROUND_MARKERS,
+     SHOW_TEXT,
+     DEBUG_PANEL,
+     ),
+
     "Brain Type":
     (SENSITIVITY_TO_PLAYER,
      BRAIN_BIAS,
@@ -187,7 +219,15 @@ want_bools = [
     AUTOMATIC_EVASION,
     WRAPAROUND_TRACKING,
     SHOW_NAMES,
-    SHOW_HELP]
+    SHOW_HELP,
+    SHOW_SIDES,
+    SHOW_VECTORS,
+    SHOW_INDICATORS,
+    SHOW_LINES,
+    SHOW_TILES,
+    SHOW_BACKGROUND_MARKERS,
+    SHOW_TEXT,
+    DEBUG_PANEL]
 
 want_ints = [
     MAXIMUM_BEES,
@@ -205,6 +245,7 @@ want_ints = [
     SPECIES_STYLE,
     BEE_STYLE,
     BRAIN_ACTIVATION,
+    LINE_MEMORY,
 ]
 
 max_val = {
@@ -221,6 +262,7 @@ max_val = {
     SPECIES_STYLE: 4,
     BEE_STYLE: 3,
     BRAIN_ACTIVATION: 3,
+    LINE_MEMORY: 100,
 }
 
 min_val = {
@@ -242,6 +284,7 @@ min_val = {
     BEE_STYLE: 1,
     BRAIN_ACTIVATION: 1,
     TREE_UPDATE_TIME: 1,
+    LINE_MEMORY: 1,
 }
 
 

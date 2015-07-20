@@ -2,6 +2,7 @@ import pygame
 import graphics
 from graphics import bw, bh
 import time
+from game_settings import settings, SHOW_SIDES, SHOW_VECTORS, SHOW_INDICATORS, SHOW_LINES, LINE_MEMORY, SHOW_TILES, SHOW_BACKGROUND_MARKERS, SHOW_TEXT
 import string
 
 
@@ -22,15 +23,6 @@ lines = []
 tiles = []
 backgroundmarkers = []
 backgroundpointmarkers = []
-
-SHOW_SIDES = 0
-SHOW_VECTORS = 0
-SHOW_INDICATORS = 0
-SHOW_LINES = 0
-LINE_MEMORY = 5
-SHOW_TILES = 0
-SHOW_BACKGROUND_MARKERS = 0
-SHOW_TEXT = 1
 
 
 segs = []  # a list of times
@@ -105,7 +97,7 @@ def decorator(x):
 
 
 def summarizetimings(segs, segdescriptors):
-    if SHOW_TEXT and not frames[0] % 30:
+    if settings[SHOW_TEXT] and not frames[0] % 30:
         record("end")
 
         total = segs[-1] - segs[0]
@@ -193,7 +185,7 @@ def normtuple(x, y):
 
 
 def mark(background):
-    if not SHOW_BACKGROUND_MARKERS:
+    if not settings[SHOW_BACKGROUND_MARKERS]:
         return
 
     for p1, p2 in backgroundmarkers:
@@ -247,7 +239,7 @@ def draw(surface, room):
     pygame.draw.line(surface, c, p_p0, p_p1, 1)
     pygame.draw.line(surface, c, s_p0, s_p1, 1)'''
 
-    if SHOW_SIDES:
+    if settings[SHOW_SIDES]:
         for i, layer in enumerate(sides):
             for side in layer:
                 color = graphics.colorcycle[i % len(graphics.colorcycle)]
@@ -255,7 +247,7 @@ def draw(surface, room):
                     surface, color, array(side.side[0])[0], array(side.side[1])[0], 7)
     sides = []
 
-    if SHOW_VECTORS:
+    if settings[SHOW_VECTORS]:
         for i, (d_x, d_y) in enumerate(vectors):
             spacing = 50
             ox = 50
@@ -282,12 +274,12 @@ def draw(surface, room):
                 surface, (41, 255, 204), startxy, (sx + d_x, sy + d_y), 1)
     vectors = [(0, 0)]
 
-    if SHOW_INDICATORS:
+    if settings[SHOW_INDICATORS]:
         for i, value in enumerate(indicators):
             pygame.draw.circle(surface, (255, 51, 102), ((
                 i + 1) * graphics.screen_w / (len(indicators) + 1), 16), int(value))
 
-    if SHOW_LINES:
+    if settings[SHOW_LINES]:
         for p1, p2 in lines:
             pygame.draw.line(surface, (0, 255, 0), p1, p2, 1)
         lines = []
@@ -324,12 +316,14 @@ def draw(surface, room):
                         print "bad bad bad"
         lines = lines[-LINE_MEMORY:]
         '''
+    else:
+        lines = []
 
     for x, y in tiles:
         try:
             r = pygame.Rect(x * bw, y * bh, bw + 1, bh + 1)
             # room.dirtyareas.append(r)
-            if SHOW_TILES:
+            if settings[SHOW_TILES]:
                 pygame.draw.rect(surface, (0, 0, 255), r, 1)
         except:
             print "test.tiles hates this tile", x, y

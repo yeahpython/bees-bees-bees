@@ -5,130 +5,157 @@ I1
 sS'Health Loss Rate'
 p2
 F1e-05
-sS'Wraparound Tracking'
+sS'Show Indicators'
 p3
-I01
-sS'Show Help'
+I00
+sS'Wraparound Tracking'
 p4
+I00
+sS'Show Help'
+p5
 I01
 sS'Scaling Mutation Rate'
-p5
-I0
-sS'Tree Thickness'
 p6
+I0
+sS'Line Memory'
+p7
+I40
+sS'Tree Thickness'
+p8
 I1
 sS'Random Tile Density'
-p7
-F0.3
-sS'Sting Repulsion'
-p8
-I60
-sS'Overpopulation Limit'
 p9
-I40
-sS'Species Visualization Style'
+F0.3
+sS'Show Vectors'
 p10
-I4
-sS'Memory Strength'
+I00
+sS'Sting Repulsion'
 p11
-I1
-sS'Mapgen iterations'
+I300
+sS'Overpopulation Limit'
 p12
 I20
-sS'Invert Mutation Rate'
+sS'Species Visualization Style'
 p13
-I0
-sS'Additive Mutation Rate'
+I4
+sS'Memory Strength'
 p14
 I1
-sS'Bee Style'
+sS'Show Tiles'
 p15
+I00
+sS'Mapgen iterations'
+p16
+I20
+sS'Invert Mutation Rate'
+p17
+I0
+sS'Additive Mutation Rate'
+p18
+I1
+sS'Bee Style'
+p19
 I2
 sS'Creature Mode'
-p16
+p20
 I0
 sS'Show Names'
-p17
+p21
 I00
 sS'Eye Mutation Range'
-p18
+p22
 I5
 sS'Sticky Walls'
-p19
+p23
 I1
 sS'Tree Update Time'
-p20
+p24
 I1
 sS'Juiciness'
-p21
+p25
 I0
 sS'Slowness Penalty'
-p22
+p26
 F0.03
 sS'Brain Activation'
-p23
+p27
 I3
 sS'Tile Minimum Neighbors'
-p24
+p28
 I5
 sS'Health Gain'
-p25
+p29
 I1
 sS'Gravity'
-p26
+p30
 F0.0006
 sS'Maximum Health'
-p27
+p31
 I1
 sS'Mutation Chances'
-p28
+p32
 F0.9
+sS'Show Background Markers'
+p33
+I00
+sS'Show Text'
+p34
+I00
 sS'Congeal Thoroughness'
-p29
+p35
 F0.4
+sS'Show Lines'
+p36
+I00
 sS'Generate Random Map'
-p30
+p37
 I00
 sS'Tree Vertical Spacing'
-p31
+p38
 I5
 sS'Offspring Mutation Rate'
-p32
+p39
 I1
+sS'Show Panel Outlines'
+p40
+I00
 sS'Brain Bias'
-p33
+p41
 I1
 sS'Automatic Bee Evasion'
-p34
+p42
 I0
 sS'Sensitivity To Player Position'
-p35
+p43
 I10
+sS'Show Sides'
+p44
+I00
 sS'Tree Horizontal Spacing'
-p36
+p45
 I5
 sS'Cost of Jumping'
-p37
+p46
 F0.2
 sS'Show Eyes'
-p38
+p47
 I00
 sS'Wall Acid'
-p39
+p48
 F0.01
 sS"'Too Slow' Threshold"
-p40
+p49
 F0.05
 sS'Swarming Peer Pressure'
-p41
+p50
 I0
 sS'Tree Color Variation'
-p42
+p51
 I50
 sS'Tile Maximum Neighbors'
-p43
+p52
 I6000
 sS'Speed Payoff'
-p44
-F0.0
+p53
+F0.1
 s.

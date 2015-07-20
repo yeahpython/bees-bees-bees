@@ -669,6 +669,11 @@ class Bee(physical.Physical):
         # if linalg.norm(self.prevpos - self.xy) < 200:
         #    test.lines.append( ( (int(self.prevpos[0, 0]), int(self.prevpos[0, 1]) ), (int(self.xy[0, 0]), int(self.xy[0, 1]) ) ) )
 
+        c = int(self.xy[0, 0] / bw)
+        r = int(self.xy[0, 1] / bh)
+        if self.room.tiles[c][r].name == "bounce":
+            self.vxy[0, 1] += -0.001 * dt
+
         test.remove_sticky("bee:update:physics:teleport")
 
         test.remove_sticky("bee:update:physics")
@@ -698,7 +703,10 @@ class Bee(physical.Physical):
                 self.die()
 
             # self.player.color = [x for x in self.color]
-            # self.player.radius -=1
+            self.player.radius -= 1
+            if self.player.radius < 10:
+                self.player.radius = 10
+
             # self.player.grounded = 0
 
             self.player.losinghealth = 1
